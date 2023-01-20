@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+.idea/
+.tmp/
+.vscode/
+runs/
+/inference/*
+*.pth
+*.pt
+*.tar
+*.tar.gz
+*.ipynb
+*.jpg
+*.png
