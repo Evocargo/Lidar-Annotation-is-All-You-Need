@@ -19,8 +19,8 @@ import numpy as np
 from tensorboardX import SummaryWriter
 from lib.dataset.WaymoSegmDataset import WaymoSegmDataset
 from lib.dataset.Waymo2dSegmDataset import Waymo2dSegmDataset
-from lib.config.waymo_test_pspnet import _C as cfg
-from lib.config.waymo_test_pspnet import update_config
+from lib.config.waymo import _C as cfg
+from lib.config.waymo import update_config
 from lib.core.loss_pspnet import get_loss
 from lib.core.function_pspnet import train, validate
 from lib.utils.utils import get_optimizer, save_checkpoint, create_logger, select_device
@@ -117,22 +117,73 @@ def main():
     # model.nc = len(cfg.MODEL.DET_CLASSES)
 
     # TRAIN data loading
-    print("begin to load data")
+    print("TRAIN: begin to load data")
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    dataset1 = Waymo2dSegmDataset(
-        cfg=cfg,
-        is_train=True,
-        inputsize=cfg.MODEL.IMAGE_SIZE,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            normalize,
-        ]),
-        data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm /mnt/large/data/waymo_lidar_segm
-        split='val', # TO FIX
-    )
-    dataset1.name = "Waymo Segmentation"
-    datasets = [dataset1]
-    datasets_fractions = cfg.DATASET.DATASETS_FRACTIONS
+    if cfg.DATASET.MASKS_ONLY:
+        print(f'We will use only 2d segmentation masks')
+        dataset1 = Waymo2dSegmDataset(
+            cfg=cfg,
+            is_train=True,
+            inputsize=cfg.MODEL.IMAGE_SIZE,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                normalize,
+            ]),
+            data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
+            split='train',
+        )
+        dataset1.name = "Waymo Segmentation 2d"
+        datasets = [dataset1]
+        datasets_fractions = [1.]
+    elif cfg.DATASET.LIDAR_DATA_ONLY:
+        print(f'We will use only reprojected lidar segmentation masks')
+        dataset1 = WaymoSegmDataset(
+            cfg=cfg,
+            is_train=True,
+            inputsize=cfg.MODEL.IMAGE_SIZE,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                normalize,
+            ]),
+            data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
+            split='train',
+        )
+        dataset1.name = "Waymo Segmentation repojected 3d"
+        datasets = [dataset1]
+        datasets_fractions = [1.]
+    else:
+        print(f'We will use both 2d masks and reprojected 3d data')
+        dataset1 = WaymoSegmDataset(
+            cfg=cfg,
+            is_train=True,
+            inputsize=cfg.MODEL.IMAGE_SIZE,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                normalize,
+            ]),
+            data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
+            split='train',
+            from_img=0, 
+            to_img=926,
+        )
+        dataset1.name = "Waymo Segmentation repojected 3d"
+
+        dataset2 = Waymo2dSegmDataset(
+            cfg=cfg,
+            is_train=True,
+            inputsize=cfg.MODEL.IMAGE_SIZE,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                normalize,
+            ]),
+            data_path="/mnt/large/data/waymo_2d_3d_segm/",
+            split='train',
+            from_img=926, 
+            to_img=1852,
+        )
+        dataset2.name = "Waymo Segmentation 2d"
+        datasets = [dataset1, dataset2]
+        datasets_fractions = cfg.DATASET.DATASETS_FRACTIONS
 
     dataset_samples_list = []
     num_samples = 0
@@ -160,8 +211,10 @@ def main():
         collate_fn=Waymo2dSegmDataset.collate_fn,
     )
     num_batch = len(train_loader)
+    print('TRAIN: load data finished')
     
     # VAL data loading
+    print("VAL: begin to load data")
     valid_dataset = Waymo2dSegmDataset(
         cfg=cfg,
         is_train=False,
@@ -182,7 +235,7 @@ def main():
         pin_memory=cfg.PIN_MEMORY,
         collate_fn=Waymo2dSegmDataset.collate_fn
     )
-    print('load data finished')
+    print('VAL: load data finished')
 
     # training
     num_warmup = max(round(cfg.TRAIN.WARMUP_EPOCHS * num_batch), 1000)
@@ -193,7 +246,7 @@ def main():
             train_loader.sampler.set_epoch(epoch)
         # train for one epoch
         train(cfg, train_loader, model, criterion, optimizer, scaler,
-              epoch, num_batch, num_warmup, writer_dict, logger, device, None, Logger)
+              epoch, num_batch, num_warmup, writer_dict, logger, device, final_output_dir, Logger)
         
         lr_scheduler.step()
 

@@ -7,8 +7,6 @@ _C.GPUS = [0]
 _C.WORKERS = 4
 _C.PIN_MEMORY = True
 _C.PRINT_FREQ = 20
-_C.AUTO_RESUME = False       # Resume from the last training interrupt
-_C.NEED_LOAD_ANCHORS = True
 _C.DEBUG = False
 _C.DEBUG_N_BATCHES = 0
 _C.num_seg_class = 2
@@ -19,18 +17,11 @@ _C.CUDNN.BENCHMARK = True
 _C.CUDNN.DETERMINISTIC = False
 _C.CUDNN.ENABLED = True
 
-
 # common params for NETWORK
 _C.MODEL = CN(new_allowed=True)
 _C.MODEL.NAME = ''
-_C.MODEL.STRU_WITHSHARE = False     # add share_block to segbranch
-_C.MODEL.HEADS_NAME = ['']
-_C.MODEL.PRETRAINED = "" #"weights_our/model_det_enc_coco_epoch65.pth" #"weights/End-to-end.pth"
-_C.MODEL.PRETRAINED_DET = ""
 _C.MODEL.IMAGE_SIZE = [640, 640]  # width * height, ex: 192 * 256
-_C.MODEL.EXTRA = CN(new_allowed=True)
 _C.MODEL.SEGM_CLASSES = 'road'
-
 
 # loss params
 _C.LOSS = CN(new_allowed=True)
@@ -40,12 +31,8 @@ _C.LOSS.FL_GAMMA = 0.0  # focal loss gamma
 _C.LOSS.CLS_POS_WEIGHT = 1.0  # classification loss positive weights
 _C.LOSS.OBJ_POS_WEIGHT = 1.0  # object loss positive weights
 _C.LOSS.SEG_POS_WEIGHT = 1.0  # segmentation loss positive weights
-_C.LOSS.BOX_GAIN = 0.15  # box loss gain
-_C.LOSS.CLS_GAIN = 0.6  # classification loss gain
-_C.LOSS.OBJ_GAIN = 1.1  # object loss gain
 _C.LOSS.DA_SEG_GAIN = 1.0  # driving area segmentation loss gain CHANHED FROM 0.2
 _C.LOSS.MASKED = True # for lidar based masked loss
-
 
 # DATASET related params
 _C.DATASET = CN(new_allowed=True)
@@ -54,13 +41,11 @@ _C.DATASET.DATASETS_FRACTIONS = [1., 1.] # youtube_beta, bags_historical, side, 
 _C.DATASET.TRAIN_SET = 'train'
 _C.DATASET.TEST_SET = 'val'
 _C.DATASET.DATA_FORMAT = 'jpg'
-_C.DATASET.SELECT_DATA = False
 _C.DATASET.ORG_IMG_SIZE = [720, 1280]
-_C.DATASET.BDD_DILATION = True
 _C.DATASET.USE_DET_CACHE = True
 _C.DATASET.WAYMO_DILATION = False
 _C.DATASET.MASKS_ONLY = False # 1
-_C.DATASET.LIDAR_DATA_ONLY = False # 2 # of 1 and 2 false --> mixing 
+_C.DATASET.LIDAR_DATA_ONLY = False # 2 ## if 1 and 2 are False --> mixing 
 
 # training data augmentation
 _C.DATASET.FLIP = True
@@ -80,7 +65,6 @@ _C.TRAIN.LRF = 0.5  # final OneCycleLR learning rate (lr0 * lrf)
 _C.TRAIN.WARMUP_EPOCHS = 3.0
 _C.TRAIN.WARMUP_BIASE_LR = 0.1
 _C.TRAIN.WARMUP_MOMENTUM = 0.8
-
 _C.TRAIN.OPTIMIZER = 'adam'
 _C.TRAIN.MOMENTUM = 0.937
 _C.TRAIN.WD = 0.0005
@@ -94,9 +78,6 @@ _C.TRAIN.END_EPOCH = 300
 _C.TRAIN.VAL_FREQ = 1
 _C.TRAIN.BATCH_SIZE_PER_GPU = 6
 _C.TRAIN.SHUFFLE = True
-
-_C.TRAIN.IOU_THRESHOLD = 0.2
-_C.TRAIN.ANCHOR_THRESHOLD = 4.0
 
 _C.TRAIN.PLOT = True
 _C.TRAIN.SAVE_LOCALLY = True
@@ -112,7 +93,7 @@ _C.TEST.PLOTS = True
 # inference and vis
 _C.inference_visualization = False
 _C.save_video = False
-
+_C.vis_train_gt = True
 
 def update_config(cfg, args):
     cfg.defrost()

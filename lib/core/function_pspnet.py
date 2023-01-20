@@ -13,11 +13,11 @@ from lib.utils import show_seg_result
 from evopy.images import write_video
 
 
-def train(cfg, train_loader, model, criterion, optimizer, scaler, epoch, num_batch, num_warmup,
+def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_batch, num_warmup,
           writer_dict, logger, device, final_output_dir=None, clearml_logger=None):
     """
     TODO
-    """
+    """ 
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -32,21 +32,21 @@ def train(cfg, train_loader, model, criterion, optimizer, scaler, epoch, num_bat
     model.train()
     
     start = time.time()
-    for i, (input, target, _paths, shapes) in enumerate(train_loader):
-        num_iter = i + num_batch * (epoch - 1)
+    for batch_i, (input, target, _paths, shapes) in enumerate(train_loader):
+        num_iter = batch_i + num_batch * (epoch - 1)
 
         if num_iter < num_warmup:
             # warm up
-            lf = lambda x: ((1 + math.cos(x * math.pi / cfg.TRAIN.END_EPOCH)) / 2) * \
-                           (1 - cfg.TRAIN.LRF) + cfg.TRAIN.LRF  # cosine
+            lf = lambda x: ((1 + math.cos(x * math.pi / config.TRAIN.END_EPOCH)) / 2) * \
+                           (1 - config.TRAIN.LRF) + config.TRAIN.LRF  # cosine
             xi = [0, num_warmup]
             for j, x in enumerate(optimizer.param_groups):
-                x['lr'] = np.interp(num_iter, xi, [cfg.TRAIN.WARMUP_BIASE_LR if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
+                x['lr'] = np.interp(num_iter, xi, [config.TRAIN.WARMUP_BIASE_LR if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
                 if 'momentum' in x:
-                    x['momentum'] = np.interp(num_iter, xi, [cfg.TRAIN.WARMUP_MOMENTUM, cfg.TRAIN.MOMENTUM])
+                    x['momentum'] = np.interp(num_iter, xi, [config.TRAIN.WARMUP_MOMENTUM, config.TRAIN.MOMENTUM])
 
         data_time.update(time.time() - start)
-        if not cfg.DEBUG:
+        if not config.DEBUG:
             input = input.to(device, non_blocking=True)
             assign_target = []
             for tgt in target:
@@ -61,6 +61,19 @@ def train(cfg, train_loader, model, criterion, optimizer, scaler, epoch, num_bat
         scaler.scale(total_loss).backward()
         scaler.step(optimizer)
         scaler.update()
+        
+        if config.vis_train_gt:
+            if batch_i in [0, 1, 2]:
+                image_ind = 1 # just the first image from three diferent batches
+                img_inv_norm = inverse_normalize(input[image_ind], mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+                img_test = cv2.cvtColor(img_inv_norm.cpu().numpy().transpose(1, 2, 0) * 255, cv2.COLOR_BGR2RGB)
+                da_gt_mask = target[1][image_ind].unsqueeze(0)
+                _, da_gt_mask = torch.max(da_gt_mask, 1)
+                da_gt_mask = da_gt_mask.int().squeeze().cpu().numpy()
+                img_test1 = img_test.copy()
+                _img_with_gt = show_seg_result(img_test1, da_gt_mask, batch_i, epoch, 
+                                                save_dir, is_gt=True, config=config, 
+                                                clearml_logger=clearml_logger, prefix='train_')
 
         # measure accuracy and record loss
         input_size = input.size(0)
@@ -69,13 +82,13 @@ def train(cfg, train_loader, model, criterion, optimizer, scaler, epoch, num_bat
 
         # measure elapsed time
         batch_time.update(time.time() - start)
-        if i % cfg.PRINT_FREQ == 0:
+        if batch_i % config.PRINT_FREQ == 0:
             msg = 'Epoch: [{0}][{1}/{2}]\t' \
                     'Time {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t' \
                     'Speed {speed:.1f} samples/s\t' \
                     'Data {data_time.val:.3f}s ({data_time.avg:.3f}s)\t' \
                     'Loss {loss.val:.5f} ({loss.avg:.5f})'.format(
-                        epoch, i, len(train_loader), batch_time=batch_time,
+                        epoch, batch_i, len(train_loader), batch_time=batch_time,
                         speed=input.size(0)/batch_time.val,
                         data_time=data_time, loss=losses)
             logger.info(msg)
@@ -86,10 +99,10 @@ def train(cfg, train_loader, model, criterion, optimizer, scaler, epoch, num_bat
             writer_dict['train_global_steps'] = global_steps + 1
 
         # BATCH END
-        if cfg.DEBUG_N_BATCHES > 0 and i == cfg.DEBUG_N_BATCHES:
+        if config.DEBUG_N_BATCHES > 0 and batch_i == config.DEBUG_N_BATCHES:
             break
 
-    if cfg.TRAIN.CLEARML_LOGGING:
+    if config.TRAIN.CLEARML_LOGGING:
         clearml_logger.current_logger().report_scalar(title="TRAIN_LOSS", series="TRAIN_LOSS", value=losses.avg, iteration=epoch)
         clearml_logger.current_logger().report_scalar(title="LOSSES", series="seg_da_LOSS", value=seg_da_loss.avg, iteration=epoch)
 
@@ -154,23 +167,23 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
             losses.update(total_loss.item(), img.size(0))
 
             if config.TEST.PLOTS and not config.inference_visualization:
-                if batch_i == 0 or batch_i == 1 or batch_i == 2:
-                    for i in range(1): # just the first image from three diferent batches
-                        img_inv_norm = inverse_normalize(img[i], mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-                        img_test = cv2.cvtColor(img_inv_norm.cpu().numpy().transpose(1, 2, 0) * 255, cv2.COLOR_BGR2RGB)
-                        
-                        da_seg_mask = da_seg_out[i].unsqueeze(0)
-                        _, da_seg_mask = torch.max(da_seg_mask, 1) # if the first tensor (not road) max then 0, else 1 which is road
-                        da_gt_mask = target[1][i].unsqueeze(0)
-                        _, da_gt_mask = torch.max(da_gt_mask, 1)
-                        da_seg_mask = da_seg_mask.int().squeeze().cpu().numpy()
-                        da_gt_mask = da_gt_mask.int().squeeze().cpu().numpy()
+                if batch_i == 0 or batch_i == 1 or batch_i == 2: # TO FIX 
+                    image_ind = 0 # just the first image from three diferent batches
+                    img_inv_norm = inverse_normalize(img[image_ind], mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+                    img_test = cv2.cvtColor(img_inv_norm.cpu().numpy().transpose(1, 2, 0) * 255, cv2.COLOR_BGR2RGB)
+                    
+                    da_seg_mask = da_seg_out[image_ind].unsqueeze(0)
+                    _, da_seg_mask = torch.max(da_seg_mask, 1) # if the first tensor (not road) max then 0, else 1 which is road
+                    da_gt_mask = target[1][image_ind].unsqueeze(0)
+                    _, da_gt_mask = torch.max(da_gt_mask, 1)
+                    da_seg_mask = da_seg_mask.int().squeeze().cpu().numpy()
+                    da_gt_mask = da_gt_mask.int().squeeze().cpu().numpy()
 
-                        img_test1 = img_test.copy()
-                        _img_with_segm = show_seg_result(img_test, da_seg_mask, batch_i, epoch, save_dir, config=config, clearml_logger=clearml_logger)
-                        _img_with_gt = show_seg_result(img_test1, da_gt_mask, batch_i, epoch, save_dir, is_gt=True, config=config, clearml_logger=clearml_logger)
+                    img_test1 = img_test.copy()
+                    _img_with_segm = show_seg_result(img_test, da_seg_mask, batch_i, epoch, save_dir, config=config, clearml_logger=clearml_logger)
+                    _img_with_gt = show_seg_result(img_test1, da_gt_mask, batch_i, epoch, save_dir, is_gt=True, config=config, clearml_logger=clearml_logger)
             else:
-                for i in range(nb):
+                for image_ind in range(nb): # for each image in batch
                     folder_to_save = Path(f"{save_dir}/inference_results/")
                     folder_to_save.mkdir(parents=True, exist_ok=True)
 
@@ -179,16 +192,16 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
                         folder_to_save_gt.mkdir(parents=True, exist_ok=True)
 
                     if hasattr(val_loader.dataset, 'data_path'):
-                        filename = val_loader.dataset.data_path((batch_i * test_batch_size) + i).name
+                        filename = val_loader.dataset.data_path((batch_i * test_batch_size) + image_ind).name
                     else:
-                        filename = f"{batch_i}_{i}_det_pred.jpg"
+                        filename = f"{batch_i}_{image_ind}_det_pred.jpg"
 
-                    img_inv_norm = inverse_normalize(img[i], mean=(0.485, 0.456, 0.406), 
+                    img_inv_norm = inverse_normalize(img[image_ind], mean=(0.485, 0.456, 0.406), 
                                                      std=(0.229, 0.224, 0.225))
                     img_test = cv2.cvtColor(img_inv_norm.cpu().numpy().transpose(1, 2, 0) * 255, 
                                             cv2.COLOR_BGR2RGB)
 
-                    da_seg_mask = da_seg_out[i].unsqueeze(0)
+                    da_seg_mask = da_seg_out[image_ind].unsqueeze(0)
                     _, da_seg_mask = torch.max(da_seg_mask, 1)
                     da_seg_mask = da_seg_mask.int().squeeze().cpu().numpy()
 
@@ -197,7 +210,7 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
                     cv2.imwrite(f"{folder_to_save}/{filename}", img_with_predict)
                     
                     if config.save_gt:
-                        da_gt_mask = target[1][i].unsqueeze(0)
+                        da_gt_mask = target[1][image_ind].unsqueeze(0)
                         _, da_gt_mask = torch.max(da_gt_mask, 1)
                         da_gt_mask = da_gt_mask.int().squeeze().cpu().numpy()
                         img_test2 = img_test.copy()

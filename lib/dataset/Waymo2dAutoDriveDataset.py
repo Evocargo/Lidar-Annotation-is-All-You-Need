@@ -214,19 +214,6 @@ class Waymo2dAutoDriveDataset(Dataset):
 
         return img, target, data["image"], shapes
 
-    def select_data(self, db):
-        """
-        You can use this function to filter useless images in the dataset
-
-        Inputs:
-        -db: (list)database
-
-        Returns:
-        -db_selected: (list)filtered dataset
-        """
-        db_selected = ...
-        return db_selected
-
     @staticmethod
     def collate_fn(batch):
         img, label, paths, shapes= zip(*batch)
