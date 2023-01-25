@@ -72,12 +72,6 @@ class Waymo2dAutoDriveDataset(Dataset):
         finished on children Dataset(for dataset which is not in Bdd100k format, rewrite children Dataset)
         """
         raise NotImplementedError
-
-    def evaluate(self, cfg, preds, output_dir):
-        """
-        finished on children dataset
-        """
-        raise NotImplementedError
     
     def __len__(self,):
         """

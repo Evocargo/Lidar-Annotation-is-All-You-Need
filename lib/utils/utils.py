@@ -1,21 +1,10 @@
 import os
 import logging
 import time
-from collections import namedtuple
 from pathlib import Path
-
 import torch
 import torch.optim as optim
-import torch.nn as nn
 import numpy as np
-from torch.utils.data import DataLoader
-from prefetch_generator import BackgroundGenerator
-from contextlib import contextmanager
-import re
-
-def clean_str(s):
-    # Cleans a string by replacing special characters with underscore _
-    return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
 
 def create_logger(cfg, cfg_path, phase='train', rank=-1):
     # set up logger dir
@@ -48,7 +37,6 @@ def create_logger(cfg, cfg_path, phase='train', rank=-1):
     else:
         return None, None, None
 
-
 def select_device(logger=None, device='', batch_size=None):
     # device = 'cpu' or '0' or '0,1,2,3'
     cpu_request = device.lower() == 'cpu'
@@ -77,7 +65,6 @@ def select_device(logger=None, device='', batch_size=None):
         logger.info('')  # skip a line
     return torch.device('cuda:0' if cuda else 'cpu')
 
-
 def get_optimizer(cfg, model):
     optimizer = None
     if cfg.TRAIN.OPTIMIZER == 'sgd':
@@ -94,9 +81,7 @@ def get_optimizer(cfg, model):
             lr=cfg.TRAIN.LR0,
             betas=(cfg.TRAIN.MOMENTUM, 0.999)
         )
-
     return optimizer
-
 
 def save_checkpoint(epoch, name, model, optimizer, output_dir, filename, is_best=False):
     model_state = model.state_dict()
@@ -111,7 +96,6 @@ def save_checkpoint(epoch, name, model, optimizer, output_dir, filename, is_best
         torch.save(checkpoint['best_state_dict'],
                    os.path.join(output_dir, 'model_best.pth'))
 
-
 def xyxy2xywh(x):
     # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
@@ -121,13 +105,28 @@ def xyxy2xywh(x):
     y[:, 3] = x[:, 3] - x[:, 1]  # height
     return y
 
-
 def time_synchronized():
     torch.cuda.synchronize() if torch.cuda.is_available() else None
     return time.time()
 
+def inverse_normalize(tensor, mean, std):
+    for t, m, s in zip(tensor, mean, std):
+        t.mul_(s).add_(m)
+    return tensor
 
-class DataLoaderX(DataLoader):
-    """prefetch dataloader"""
-    def __iter__(self):
-        return BackgroundGenerator(super().__iter__())
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count if self.count != 0 else 0

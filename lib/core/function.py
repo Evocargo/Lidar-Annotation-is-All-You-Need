@@ -9,8 +9,8 @@ from torch.cuda import amp
 from tqdm import tqdm
 
 from lib.core.evaluate import SegmentationMetric
-from lib.utils import show_seg_result
-from evopy.images import write_video
+from lib.utils import show_seg_result, inverse_normalize, AverageMeter
+from evopy.images import write_video # TO FIX
 
 
 def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_batch, num_warmup,
@@ -225,7 +225,7 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
             break
     
     if config.save_video:
-        video_path = f"{save_dir}/segm_video_{val_loader.dataset.split}_yolop.mp4"
+        video_path = f"{save_dir}/segm_video_{val_loader.dataset.split}.mp4"
         write_video(res_images, video_path=video_path)
 
     model.float()  # for training
@@ -233,25 +233,3 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
 
     return da_segment_result, losses.avg
 
-
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count if self.count != 0 else 0
-
-def inverse_normalize(tensor, mean, std):
-    for t, m, s in zip(tensor, mean, std):
-        t.mul_(s).add_(m)
-    return tensor

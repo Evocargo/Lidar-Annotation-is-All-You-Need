@@ -21,8 +21,8 @@ from lib.dataset.WaymoSegmDataset import WaymoSegmDataset
 from lib.dataset.Waymo2dSegmDataset import Waymo2dSegmDataset
 from lib.config.waymo import _C as cfg
 from lib.config.waymo import update_config
-from lib.core.loss_pspnet import get_loss
-from lib.core.function_pspnet import train, validate
+from lib.core.loss import get_loss
+from lib.core.function import train, validate
 from lib.utils.utils import get_optimizer, save_checkpoint, create_logger, select_device
 from lib.utils.dataloader import WeightedDataLoader
 from lib.utils import DataLoaderX

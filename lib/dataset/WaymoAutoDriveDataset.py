@@ -76,12 +76,6 @@ class WaymoAutoDriveDataset(Dataset):
         finished on children Dataset(for dataset which is not in Bdd100k format, rewrite children Dataset)
         """
         raise NotImplementedError
-
-    def evaluate(self, cfg, preds, output_dir):
-        """
-        finished on children dataset
-        """
-        raise NotImplementedError
     
     def __len__(self):
         """
@@ -180,7 +174,6 @@ class WaymoAutoDriveDataset(Dataset):
             )
 
             augment_hsv(img, hgain=self.cfg.DATASET.HSV_H, sgain=self.cfg.DATASET.HSV_S, vgain=self.cfg.DATASET.HSV_V)
-            # img, seg_label, labels = cutout(combination=combination, labels=labels)
 
             if len(labels):
                 # convert xyxy to xywh

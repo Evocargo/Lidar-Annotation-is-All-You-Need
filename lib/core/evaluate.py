@@ -1,5 +1,3 @@
-from pathlib import Path
-import matplotlib.pyplot as plt
 import numpy as np
 
 class SegmentationMetric(object):
@@ -67,7 +65,6 @@ class SegmentationMetric(object):
                 np.diag(self.confusionMatrix))
         FWIoU = (freq[freq > 0] * iu[freq > 0]).sum()
         return FWIoU
-
 
     def addBatch(self, imgPredict, imgLabel):
         assert imgPredict.shape == imgLabel.shape

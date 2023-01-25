@@ -55,6 +55,3 @@ def show_seg_result(
                 clearml_logger.current_logger().report_image(
                     "image", f"{prefix}da_seg_gt{index}", iteration=epoch, image=cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     return img
-
-if __name__ == "__main__":
-    pass

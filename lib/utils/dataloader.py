@@ -1,5 +1,6 @@
 import numpy as np
 from torch.utils.data import ConcatDataset, DataLoader, WeightedRandomSampler
+from prefetch_generator import BackgroundGenerator
 
 from evopy.types import Number, Optional, Sequence, npArray # TO FIX
 
@@ -67,3 +68,9 @@ class WeightedDataLoader(DataLoader):
             start_ind = end_ind
 
         return sample_weights
+
+
+class DataLoaderX(DataLoader):
+    """prefetch dataloader"""
+    def __iter__(self):
+        return BackgroundGenerator(super().__iter__())

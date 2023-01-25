@@ -13,8 +13,13 @@
     * config
     * loss
     * utils
+* add pre-commit
 
 
 ### Extra:
 * move to albumentations 
 * move to external metrics 
+
+### Acknowledgements
+* [YOLOP](https://github.com/hustvl/YOLOP)
+* [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch)
