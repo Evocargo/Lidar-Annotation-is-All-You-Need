@@ -5,7 +5,6 @@
 [Paper concept and list of tasks with deadlines](https://evocargo.atlassian.net/wiki/spaces/PER/pages/717815826/-+Lidar+data+is+all+you+need+for+2d+road+segmentation)
 
 ### TODO:
-* adapt and add test script
 * run experiments for all cases (same as for YOLOP experiments)
 * add requirements.txt or Dockerfile
 * add script for waymo dataset processing
@@ -15,7 +14,6 @@
     * utils
 * add pre-commit
 
-
 ### Extra:
 * move to albumentations 
 * move to external metrics 
@@ -23,3 +21,4 @@
 ### Acknowledgements
 * [YOLOP](https://github.com/hustvl/YOLOP)
 * [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch)
+* [Waymo Open Dataset](https://github.com/waymo-research/waymo-open-dataset)

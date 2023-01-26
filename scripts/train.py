@@ -23,7 +23,7 @@ from lib.config.waymo import _C as cfg
 from lib.config.waymo import update_config
 from lib.core.loss import get_loss
 from lib.core.function import train, validate
-from lib.utils.utils import get_optimizer, save_checkpoint, create_logger, select_device
+from lib.utils.utils import get_optimizer, save_checkpoint, create_logger
 from lib.utils.dataloader import WeightedDataLoader
 from lib.utils import DataLoaderX
 
@@ -38,27 +38,11 @@ import segmentation_models_pytorch as smp
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Multitask network')
-    parser.add_argument('--modelDir',
-                        help='model directory',
-                        type=str,
-                        default='')
     parser.add_argument('--logDir',
                         help='log directory',
                         type=str,
                         default='runs/')
-    parser.add_argument('--dataDir',
-                        help='data directory',
-                        type=str,
-                        default='')
-    parser.add_argument('--prevModelDir',
-                        help='prev Model directory',
-                        type=str,
-                        default='')
-
-    parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
-    parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     args = parser.parse_args()
-
     return args
 
 
@@ -68,7 +52,7 @@ def main():
     update_config(cfg, args)
 
     # clearml setup
-    if cfg.TRAIN.CLEARML_LOGGING:
+    if cfg.CLEARML_LOGGING:
         task = init_clearml("YOLOP_waymo_exps_PSPNET")
         task.connect(cfg, "Config")
 
@@ -91,11 +75,9 @@ def main():
     torch.backends.cudnn.deterministic = cfg.CUDNN.DETERMINISTIC
     torch.backends.cudnn.enabled = cfg.CUDNN.ENABLED
 
-    # bulid up model
-    device = select_device(logger, batch_size=cfg.TRAIN.BATCH_SIZE_PER_GPU* len(cfg.GPUS)) if not cfg.DEBUG \
-        else select_device(logger, 'cpu')
+    device = torch.device('cuda:0')
     
-    print("load model to device")
+    print("MODEL")
     model = smp.PSPNet(
         encoder_name="resnet34",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
         encoder_weights="imagenet",     # use `imagenet` pre-trained weights for encoder initialization
@@ -112,11 +94,6 @@ def main():
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     begin_epoch = cfg.TRAIN.BEGIN_EPOCH
 
-    # assign model params
-    model.gr = 1.0
-    # model.nc = len(cfg.MODEL.DET_CLASSES)
-
-    # TRAIN data loading
     print("TRAIN: begin to load data")
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     if cfg.DATASET.MASKS_ONLY:
@@ -205,7 +182,7 @@ def main():
         concat_dataset, 
         weights=weights, 
         num_samples=num_samples, 
-        batch_size=cfg.TRAIN.BATCH_SIZE_PER_GPU * len(cfg.GPUS),
+        batch_size=cfg.TRAIN.BATCH_SIZE,
         num_workers=cfg.WORKERS,
         pin_memory=cfg.PIN_MEMORY,
         collate_fn=Waymo2dSegmDataset.collate_fn,
@@ -229,11 +206,11 @@ def main():
 
     valid_loader = DataLoaderX(
         valid_dataset,
-        batch_size=cfg.TEST.BATCH_SIZE_PER_GPU * len(cfg.GPUS),
+        batch_size=cfg.TEST.BATCH_SIZE,
         shuffle=False,
         num_workers=cfg.WORKERS,
         pin_memory=cfg.PIN_MEMORY,
-        collate_fn=Waymo2dSegmDataset.collate_fn
+        collate_fn=Waymo2dSegmDataset.collate_fn,
     )
     print('VAL: load data finished')
 
@@ -253,7 +230,7 @@ def main():
         # evaluate on validation set
         if (epoch % cfg.TRAIN.VAL_FREQ == 0 or epoch == cfg.TRAIN.END_EPOCH):
             da_segment_results, total_loss = validate(
-                epoch, cfg, valid_loader, valid_dataset, model, criterion,
+                epoch, cfg, valid_loader, model, criterion,
                 final_output_dir, device, clearml_logger=Logger,
             )
 
@@ -264,7 +241,7 @@ def main():
                           da_seg_miou=da_segment_results[2])
             logger.info(msg)
 
-            if cfg.TRAIN.CLEARML_LOGGING:
+            if cfg.CLEARML_LOGGING:
                 Logger.current_logger().report_scalar(title="VALL_LOSS", series="VALL_LOSS", value=total_loss, iteration=epoch)
                 Logger.current_logger().report_scalar(title="DA_ACC", series="DA_ACC", value=da_segment_results[0], iteration=epoch)
                 Logger.current_logger().report_scalar(title="DA_IOU", series="DA_IOU", value=da_segment_results[1], iteration=epoch)

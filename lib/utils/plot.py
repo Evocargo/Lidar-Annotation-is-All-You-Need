@@ -43,15 +43,17 @@ def show_seg_result(
 
     if not is_demo:
         if not is_gt:
-            if config.TRAIN.SAVE_LOCALLY:
+            if config.TRAIN.SAVE_LOCALLY_PER_BATCH:
                 cv2.imwrite(save_dir + f"/{prefix}batch_{epoch}_{index}_da_segresult.jpg", img)
-            if config.TRAIN.CLEARML_LOGGING:
+            if config.CLEARML_LOGGING:
                 clearml_logger.current_logger().report_image(
-                    "image", f"{prefix}da_segresult{index}", iteration=epoch, image=cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+                    "image", f"{prefix}da_segresult{index}", iteration=epoch, 
+                    image=cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         else:
-            if config.TRAIN.SAVE_LOCALLY:
+            if config.TRAIN.SAVE_LOCALLY_PER_BATCH:
                 cv2.imwrite(save_dir + f"/{prefix}batch_{epoch}_{index}_da_seg_gt.jpg", img)
-            if config.TRAIN.CLEARML_LOGGING:
+            if config.CLEARML_LOGGING:
                 clearml_logger.current_logger().report_image(
-                    "image", f"{prefix}da_seg_gt{index}", iteration=epoch, image=cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+                    "image", f"{prefix}da_seg_gt{index}", iteration=epoch, 
+                    image=cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     return img

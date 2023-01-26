@@ -62,14 +62,6 @@ class WaymoAutoDriveDataset(Dataset):
         self.db = []
 
         self.data_format = cfg.DATASET.DATA_FORMAT
-
-        self.scale_factor = cfg.DATASET.SCALE_FACTOR
-        self.rotation_factor = cfg.DATASET.ROT_FACTOR
-        self.flip = cfg.DATASET.FLIP
-        self.color_rgb = cfg.DATASET.COLOR_RGB
-
-        # self.target_type = cfg.MODEL.TARGET_TYPE
-        self.shapes = np.array(cfg.DATASET.ORG_IMG_SIZE)
     
     def _get_db(self):
         """

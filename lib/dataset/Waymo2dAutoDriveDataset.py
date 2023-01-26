@@ -58,14 +58,6 @@ class Waymo2dAutoDriveDataset(Dataset):
         self.db = []
 
         self.data_format = cfg.DATASET.DATA_FORMAT
-
-        self.scale_factor = cfg.DATASET.SCALE_FACTOR
-        self.rotation_factor = cfg.DATASET.ROT_FACTOR
-        self.flip = cfg.DATASET.FLIP
-        self.color_rgb = cfg.DATASET.COLOR_RGB
-
-        # self.target_type = cfg.MODEL.TARGET_TYPE
-        self.shapes = np.array(cfg.DATASET.ORG_IMG_SIZE)
     
     def _get_db(self):
         """
@@ -116,7 +108,9 @@ class Waymo2dAutoDriveDataset(Dataset):
             total_points_label = cv2.resize(total_points_label, (int(w0 * r), int(h0 * r)), interpolation=interp)
         h, w = img.shape[:2]
         
-        (img, seg_label, total_points_label), ratio, pad = letterbox((img, seg_label, total_points_label), resized_shape, auto=False, scaleup=self.is_train)
+        (img, seg_label, total_points_label), ratio, pad = letterbox((img, seg_label, total_points_label), 
+                                                                     resized_shape, auto=False, 
+                                                                     scaleup=self.is_train)
         shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling 
         
         det_label = data["label"]
@@ -141,7 +135,8 @@ class Waymo2dAutoDriveDataset(Dataset):
                 shear=self.cfg.DATASET.SHEAR
             )
 
-            augment_hsv(img, hgain=self.cfg.DATASET.HSV_H, sgain=self.cfg.DATASET.HSV_S, vgain=self.cfg.DATASET.HSV_V)
+            augment_hsv(img, hgain=self.cfg.DATASET.HSV_H, 
+                        sgain=self.cfg.DATASET.HSV_S, vgain=self.cfg.DATASET.HSV_V)
 
             if len(labels):
                 # convert xyxy to xywh
