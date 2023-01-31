@@ -1,10 +1,14 @@
 # Lidar Annotation Is All You Need
 
-[Overleaf link](https://www.overleaf.com/1696216323nwdndpcgrhwx) 
+## Results
 
-[Paper concept and list of tasks with deadlines](https://evocargo.atlassian.net/wiki/spaces/PER/pages/717815826/-+Lidar+data+is+all+you+need+for+2d+road+segmentation)
+### Metrics
+TODO
 
-### Setup
+### Visualization
+TODO
+
+## Setup
 
 #### Docker
 TODO
@@ -14,23 +18,29 @@ TODO
 conda env create -f environment.yml
 ```
 
-### Dataset preparation
+#### Dataset preparation
 TODO
 
-### Train
+## Training
 ```shell
 python3 scripts/train.py
 ```
 
-### Test
+## Test
 ```shell
 python scripts/test.py --weights {path to the .pth weights} --save_video
 ```
 
-### Acknowledgements
+## Acknowledgements
 * [YOLOP](https://github.com/hustvl/YOLOP)
 * [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch)
 * [Waymo Open Dataset](https://github.com/waymo-research/waymo-open-dataset)
+
+
+## Internal info (to delete later)
+[Overleaf link](https://www.overleaf.com/1696216323nwdndpcgrhwx) 
+
+[Paper concept and list of tasks with deadlines](https://evocargo.atlassian.net/wiki/spaces/PER/pages/717815826/-+Lidar+data+is+all+you+need+for+2d+road+segmentation)
 
 ### TODO:
 * add script for waymo dataset processing
