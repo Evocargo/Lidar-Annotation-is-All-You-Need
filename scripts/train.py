@@ -28,8 +28,7 @@ from lib.utils.dataloader import WeightedDataLoader
 from lib.utils import DataLoaderX
 
 # ClearML
-from evo_clearml.utils import init_clearml
-from clearml import Logger
+from clearml import Logger # TO FIX
 
 # PSPNet
 import ssl
@@ -50,11 +49,6 @@ def main():
     # set all the configurations
     args = parse_args()
     update_config(cfg, args)
-
-    # clearml setup
-    if cfg.CLEARML_LOGGING:
-        task = init_clearml("YOLOP_waymo_exps_PSPNET")
-        task.connect(cfg, "Config")
 
     # Set DDP variables
     global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
@@ -140,7 +134,7 @@ def main():
             ]),
             data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
             split='train',
-            from_img=0, 
+            from_img=0, # TO FIX hardcoded for correct mixing
             to_img=926,
         )
         dataset1.name = "Waymo Segmentation repojected 3d"
@@ -240,13 +234,7 @@ def main():
                           da_seg_acc=da_segment_results[0], da_seg_iou=da_segment_results[1], 
                           da_seg_miou=da_segment_results[2])
             logger.info(msg)
-
-            if cfg.CLEARML_LOGGING:
-                Logger.current_logger().report_scalar(title="VALL_LOSS", series="VALL_LOSS", value=total_loss, iteration=epoch)
-                Logger.current_logger().report_scalar(title="DA_ACC", series="DA_ACC", value=da_segment_results[0], iteration=epoch)
-                Logger.current_logger().report_scalar(title="DA_IOU", series="DA_IOU", value=da_segment_results[1], iteration=epoch)
-                Logger.current_logger().report_scalar(title="DA_mIOU", series="DA_mIOU", value=da_segment_results[2], iteration=epoch)
-
+        
         # save checkpoint model and best model
         if epoch % 50 == 0:
             savepath = os.path.join(final_output_dir, f'epoch-{epoch}.pth')

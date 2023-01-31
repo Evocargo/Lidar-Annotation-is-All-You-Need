@@ -9,8 +9,7 @@ from torch.cuda import amp
 from tqdm import tqdm
 
 from lib.core.evaluate import SegmentationMetric
-from lib.utils import show_seg_result, inverse_normalize, AverageMeter
-from evopy.images import write_video # TO FIX
+from lib.utils import show_seg_result, inverse_normalize, AverageMeter, write_video
 
 
 def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_batch, num_warmup,

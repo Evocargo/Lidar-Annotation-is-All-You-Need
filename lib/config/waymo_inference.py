@@ -33,12 +33,12 @@ _C.LOSS.FL_GAMMA = 0.0  # focal loss gamma
 _C.LOSS.CLS_POS_WEIGHT = 1.0  # classification loss positive weights
 _C.LOSS.OBJ_POS_WEIGHT = 1.0  # object loss positive weights
 _C.LOSS.SEG_POS_WEIGHT = 1.0  # segmentation loss positive weights
-_C.LOSS.DA_SEG_GAIN = 1.0  # driving area segmentation loss gain TRY 1.0
-_C.LOSS.MASKED = True
+_C.LOSS.DA_SEG_GAIN = 1.0  # driving area segmentation loss gain
+_C.LOSS.MASKED = True # for lidar data based masked loss
 
 # DATASET related params
 _C.DATASET = CN(new_allowed=True)
-_C.DATASET.DATASET = 'waymo3d_exps' # aka name of the folder to save
+_C.DATASET.DATASET = 'waymo3d_exps' # name of the folder to save
 _C.DATASET.TRAIN_SET = 'train'
 _C.DATASET.TEST_SET = 'val'
 _C.DATASET.DATA_FORMAT = 'jpg'

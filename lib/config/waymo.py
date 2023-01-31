@@ -18,7 +18,7 @@ _C.CUDNN.BENCHMARK = True
 _C.CUDNN.DETERMINISTIC = False
 _C.CUDNN.ENABLED = True
 
-# Common params for NETWORK
+# Common params for MODEL
 _C.MODEL = CN(new_allowed=True)
 _C.MODEL.NAME = ''
 _C.MODEL.IMAGE_SIZE = [640, 640]  # width * height, ex: 192 * 256
@@ -32,19 +32,19 @@ _C.LOSS.FL_GAMMA = 0.0  # focal loss gamma
 _C.LOSS.CLS_POS_WEIGHT = 1.0  # classification loss positive weights
 _C.LOSS.OBJ_POS_WEIGHT = 1.0  # object loss positive weights
 _C.LOSS.SEG_POS_WEIGHT = 1.0  # segmentation loss positive weights
-_C.LOSS.DA_SEG_GAIN = 1.0  # driving area segmentation loss gain CHANHED FROM 0.2
-_C.LOSS.MASKED = True # for lidar based masked loss
+_C.LOSS.DA_SEG_GAIN = 1.0  # driving area segmentation loss gain
+_C.LOSS.MASKED = True # for lidar data based masked loss
 
 # DATASET related params
 _C.DATASET = CN(new_allowed=True)
-_C.DATASET.DATASET = 'waymo_PSPNET_exps' # aka name of the folder to save
-_C.DATASET.DATASETS_FRACTIONS = [1., 1.] # youtube_beta, bags_historical, side, bdd 
+_C.DATASET.DATASET = 'waymo_PSPNET_exps' # name of the folder to save
+_C.DATASET.DATASETS_FRACTIONS = [0.5, 0.5]
 _C.DATASET.TRAIN_SET = 'train'
 _C.DATASET.TEST_SET = 'val'
 _C.DATASET.DATA_FORMAT = 'jpg'
 _C.DATASET.USE_DET_CACHE = True
 _C.DATASET.WAYMO_DILATION = False
-_C.DATASET.MASKS_ONLY = True # 1
+_C.DATASET.MASKS_ONLY = False # 1
 _C.DATASET.LIDAR_DATA_ONLY = False # 2 ## if 1 and 2 are False --> mixing 
 
 # Training data augmentation

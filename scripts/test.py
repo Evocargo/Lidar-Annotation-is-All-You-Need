@@ -26,7 +26,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Test Multitask network')
     parser.add_argument('--weights', type=str, default='', help='model.pth path')
     parser.add_argument('--inference_visualization', type=bool, default=False, help='save images with detection and segmentation results')
-    parser.add_argument('--save_video', type=bool, default=False, help='to save video with results')
+    parser.add_argument('--save_video', action='store_true', help='to save video with results')
     parser.add_argument('--save_gt', type=bool, default=False, help='to visualize gt')
     args = parser.parse_args()
     return args

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .utils import xyxy2xywh, inverse_normalize, AverageMeter
+from .utils import xyxy2xywh, inverse_normalize, AverageMeter, write_video
 from .augmentations import augment_hsv, random_perspective, letterbox, letterbox_for_img
 from .plot import show_seg_result
 from .dataloader import DataLoaderX 
