@@ -10,11 +10,16 @@ TODO: images from the paper + nice video
 
 ## Setup
 ### Dataset preparation
-Download [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset). Then filter it using provided script: 
+Download [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset) (we used [1.4.0 version](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files/testing?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false)). It has training and validation folders. 2d segmentations ground truth and point cloud segmentation ground truth are made separately and not for all images. For the paper we created datased from all images where anotations are intersected. To filter and save dataset use this script: 
 ```shell
-pip install -r requirements.txt
-TODO
+pip install -r lib/waymo_process/requirments.txt
+python3 lib/waymo_process/create_2d3d_dataset.py {path_to_training_or_validation_folder_of_waymo_dataset} subset='val'
 ```
+- --lidar_data_only=True - for saving only reprojected point cloud points for both road (gt) and other classes (loss mask)
+- --masks_only=True - for saving only 2d masks.
+- If no flag is chosen, you will get dataset of images where 2d segmentations ground truth and point cloud segmentation ground truth are intersected. 
+
+You should get 1852 images in train set and 315 images in val set with both 2d masks of road and reprojected points for road and other classes. 
 
 ### Docker
 Build contatiner:
@@ -60,7 +65,6 @@ python scripts/test.py --weights {path to the .pth weights} --save_video
 [Paper concept and list of tasks with deadlines](https://evocargo.atlassian.net/wiki/spaces/PER/pages/717815826/-+Lidar+data+is+all+you+need+for+2d+road+segmentation)
 
 ### TODO:
-* add script for waymo dataset processing
 * simplify and delete redundant:
     * config
     * loss
