@@ -89,6 +89,7 @@ def main():
     begin_epoch = cfg.TRAIN.BEGIN_EPOCH
 
     print("TRAIN: begin to load data")
+    data_path = cfg.DATASET.PATH
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     if cfg.DATASET.MASKS_ONLY:
         print(f'We will use only 2d segmentation masks')
@@ -100,7 +101,7 @@ def main():
                 transforms.ToTensor(),
                 normalize,
             ]),
-            data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
+            data_path=data_path, # /mnt/large/data/waymo_segm
             split='train',
         )
         dataset1.name = "Waymo Segmentation 2d"
@@ -116,7 +117,7 @@ def main():
                 transforms.ToTensor(),
                 normalize,
             ]),
-            data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
+            data_path=data_path, # /mnt/large/data/waymo_segm
             split='train',
         )
         dataset1.name = "Waymo Segmentation repojected 3d"
@@ -132,7 +133,7 @@ def main():
                 transforms.ToTensor(),
                 normalize,
             ]),
-            data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
+            data_path=data_path, # /mnt/large/data/waymo_segm
             split='train',
             from_img=0, # TO FIX hardcoded for correct mixing
             to_img=926,
@@ -147,7 +148,7 @@ def main():
                 transforms.ToTensor(),
                 normalize,
             ]),
-            data_path="/mnt/large/data/waymo_2d_3d_segm/",
+            data_path=data_path,
             split='train',
             from_img=926, 
             to_img=1852,
@@ -194,7 +195,7 @@ def main():
             transforms.ToTensor(),
             normalize,
         ]),
-        data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
+        data_path=data_path, # /mnt/large/data/waymo_segm
         split='val',
     )
 

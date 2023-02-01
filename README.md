@@ -1,32 +1,49 @@
 # Lidar Annotation Is All You Need
-
+![scheme](pictures/scheme.png)
 ## Results
 
 ### Metrics
-TODO
+TODO: table from the paper
 
-### Visualization
-TODO
+### Visualization of results
+TODO: images from the paper + nice video
 
 ## Setup
-
-#### Docker
+### Dataset preparation
+Download [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset). Then filter it using provided script: 
+```shell
+pip install -r requirements.txt
 TODO
+```
 
-#### Conda
+### Docker
+Build contatiner:
+```shell
+DOCKER_BUILDKIT=1 docker build --network host -t lidar_segm --target base_image --build-arg UID=1000 --build-arg GID=1000 --build-arg USERNAME={your username} .
+```
+
+Run container:
+```shell
+docker run --net=host --userns=host --pid=host -itd --gpus all --name=lidar_segm --volume={path_to_lidar_data_2d_road_segmentation}:/lidar_data_2d_road_segmentation --volume={path_to_dataset}:/data/ --shm-size 15G --cpuset-cpus 0-7 lidar_segm
+```
+
+Attach to container:
+```shell
+docker exec -it lidar_segm bash
+```
+
+### Conda
 ```shell
 conda env create -f environment.yml
 ```
 
-#### Dataset preparation
-TODO
-
 ## Training
 ```shell
+cd /lidar_data_2d_road_segmentation
 python3 scripts/train.py
 ```
 
-## Test
+## Testing
 ```shell
 python scripts/test.py --weights {path to the .pth weights} --save_video
 ```
