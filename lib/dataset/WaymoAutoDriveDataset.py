@@ -40,16 +40,9 @@ class WaymoAutoDriveDataset(Dataset):
             img_root, label_root = Path(cfg.DATASET.DATAROOT), Path(cfg.DATASET.LABELROOT)
             mask_root, lane_root= Path(cfg.DATASET.MASKROOT), Path(cfg.DATASET.LANEROOT)
         
-        if split:
-            indicator = split
-        elif is_train:
-            indicator = cfg.DATASET.TRAIN_SET
-        else:
-            indicator = cfg.DATASET.TEST_SET
-            
-        self.img_root = img_root / indicator
-        self.mask_root = mask_root / indicator
-        self.points_root = points_root / indicator
+        self.img_root = img_root / split
+        self.mask_root = mask_root / split
+        self.points_root = points_root / split
 
         self.img_list = sorted(list(self.img_root.iterdir()))
         self.mask_list = sorted(list(self.mask_root.iterdir()))

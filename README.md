@@ -10,14 +10,20 @@ TODO: images from the paper + nice video
 
 ## Setup
 ### Dataset preparation
-Download [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset) (we used [1.4.0 version](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files/testing?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false)). There are training and validation folders. 2d segmentation ground truth and point cloud segmentation ground truth are made separately and not for all images. For the paper, we created a dataset from all images, for which annotations are intersected. To filter and save the dataset use this script: 
+
+You can download filtered dataset from google drive: TODO
+
+Or filter dataset using our script:
+
+Download training and validation folders of [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset) (we used [1.4.0 version](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false)). 2d segmentation ground truth and point cloud segmentation ground truth are made separately and not for all images. For the paper, we created a dataset from all images, for which annotations are intersected. To filter and save the dataset use this script: 
 ```shell
 pip install -r lib/waymo_process/requirments.txt
-python3 lib/waymo_process/create_2d3d_dataset.py {path_to_training_or_validation_folder_of_waymo_dataset} subset='val'
+python3 lib/waymo_process/create_2d3d_dataset.py {path_to_training_or_validation_folder_of_waymo_dataset} --subset={'val' or 'train'}
 ```
+- --subset - folder name to save data
 - --lidar_data_only=True - for saving only reprojected point cloud points for both road (gt) and other classes (loss mask)
 - --masks_only=True - for saving only 2d masks.
-- If no flag is chosen, you will get dataset of images where 2d segmentation ground truth and point cloud segmentation ground truth are intersected. 
+- If no flag is chosen from lidar_data_only and masks_only, you will get dataset of images where 2d segmentation ground truth and point cloud segmentation ground truth are intersected. 
 
 You should get 1852 images in train set and 315 images in val set with both 2d masks of road and reprojected points for road and other classes. 
 
@@ -37,6 +43,12 @@ Attach to the container:
 docker exec -it lidar_segm bash
 ```
 
+Stop and remove the container:
+```shell
+docker container stop lidar_segm
+docker container rm lidar_segm
+```
+
 ### Conda
 Alternatively you can use conda on ubuntu 20.04 with python 3.8.
 ```shell
@@ -44,6 +56,7 @@ conda env create -f environment.yml
 ```
 
 ## Training
+Specify path to the dataset (DATASET.PATH) and other training params in lib/config/waymo.py and then run the script:
 ```shell
 cd /lidar_data_2d_road_segmentation
 python3 scripts/train.py

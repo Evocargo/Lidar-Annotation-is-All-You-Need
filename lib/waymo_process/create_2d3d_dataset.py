@@ -10,7 +10,7 @@ if not tf.executing_eagerly():
     tf.compat.v1.enable_eager_execution()
 
 def save_dataset_from_records(records_path, lidar_data_only=False, masks_only=False, 
-                              subset='val', save_folder='test_dataset', verbose=False):
+                              subset='val', save_folder='waymo_2d_3d_segm', verbose=False):
     print(records_path)
     records_list = [Path(records_path) / f for f in listdir(records_path) if isfile(join(records_path, f))]
     

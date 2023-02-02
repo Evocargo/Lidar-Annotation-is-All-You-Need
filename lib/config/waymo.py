@@ -40,8 +40,6 @@ _C.DATASET = CN(new_allowed=True)
 _C.DATASET.DATASET = 'waymo_PSPNET_exps' # name of the folder to save
 _C.DATASET.PATH = '/data/waymo_2d_3d_segm/' # name of the folder to save
 _C.DATASET.DATASETS_FRACTIONS = [1.0, 1.0]
-_C.DATASET.TRAIN_SET = 'train'
-_C.DATASET.TEST_SET = 'val'
 _C.DATASET.DATA_FORMAT = 'jpg'
 _C.DATASET.USE_DET_CACHE = True
 _C.DATASET.WAYMO_DILATION = False
