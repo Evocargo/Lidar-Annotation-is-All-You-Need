@@ -66,12 +66,9 @@ python scripts/test.py --weights {path to the .pth weights} --save_video
 [Paper concept and list of tasks with deadlines](https://evocargo.atlassian.net/wiki/spaces/PER/pages/717815826/-+Lidar+data+is+all+you+need+for+2d+road+segmentation)
 
 ### TODO:
+* lib/core/loss refactoring: MaskedLoss class
 * simplify and delete redundant:
-    * config
-    * loss
-    * utils
-* add pre-commit
-
-### Extra:
-* move to albumentations 
-* move to external metrics 
+    * lib/config
+    * lib/utils
+* add pre-commit 
+* save weights + folder with test images + make folder inference example
