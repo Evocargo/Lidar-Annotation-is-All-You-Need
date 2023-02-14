@@ -61,7 +61,7 @@ Specify path to the dataset (DATASET.PATH) and other training params in lib/conf
 python3 scripts/train.py
 ```
 
-By setting DATASET.MASKS_ONLY = True in config file, you will run model training using only 2d ground truth masks. DATASET.LIDAR_DATA_ONLY = True will lead to the training only usings projected from the point cloud road ground truth. If both parameters are set to False (default), the model will train on mix of these two types of the ground truth. 
+By setting DATASET.MASKS_ONLY = True in config file, you will run model training using only 2d ground truth masks. DATASET.LIDAR_DATA_ONLY = True will lead to the training only using projected from the point cloud road ground truth. If both parameters are set to False (default), the model will train on mix of these two types of the ground truth. For all cases validation dataset using 2d ground truth mask for metrics calculation. 
 
 ## Testing
 ```shell
