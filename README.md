@@ -15,7 +15,7 @@ You can download filtered dataset from google drive: TODO
 
 Or filter dataset using our script:
 
-Download training and validation folders of [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset) (we used [1.4.0 version](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false)). 2d segmentation ground truth and point cloud segmentation ground truth are made separately and not for all images. For the paper, we created a dataset from all images, for which annotations are intersected. To filter and save the dataset use this script: 
+Download training and validation folders of [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset) (we used [1.4.0 version](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false)). 2d segmentation ground truth and point cloud segmentation ground truth are made separately and not for all images. For the paper, we created a dataset from all images, for which annotations are intersected. To filter and save the dataset use these commands: 
 ```shell
 pip install -r lib/waymo_process/requirments.txt
 python3 lib/waymo_process/create_2d3d_dataset.py {path_to_training_or_validation_folder_of_waymo_dataset} --subset={'val' or 'train'}
@@ -58,9 +58,10 @@ conda env create -f environment.yml
 ## Training
 Specify path to the dataset (DATASET.PATH) and other training params in lib/config/waymo.py and then run the script:
 ```shell
-cd /lidar_data_2d_road_segmentation
 python3 scripts/train.py
 ```
+
+By setting DATASET.MASKS_ONLY = True in config file, you will run model training using only 2d ground truth masks. DATASET.LIDAR_DATA_ONLY = True will lead to the training only usings projected from the point cloud road ground truth. If both parameters are set to False (default), the model will train on mix of these two types of the ground truth. 
 
 ## Testing
 ```shell
@@ -79,6 +80,7 @@ python scripts/test.py --weights {path to the .pth weights} --save_video
 [Paper concept and list of tasks with deadlines](https://evocargo.atlassian.net/wiki/spaces/PER/pages/717815826/-+Lidar+data+is+all+you+need+for+2d+road+segmentation)
 
 ### TODO:
+* gdrive link to the dataset
 * lib/core/loss refactoring: MaskedLoss class
 * simplify and delete redundant:
     * lib/config

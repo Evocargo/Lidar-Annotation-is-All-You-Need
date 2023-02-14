@@ -39,6 +39,7 @@ _C.LOSS.MASKED = True # for lidar data based masked loss
 # DATASET related params
 _C.DATASET = CN(new_allowed=True)
 _C.DATASET.DATASET = 'waymo3d_exps' # name of the folder to save
+_C.DATASET.PATH = '/data/waymo_2d_3d_segm/' # path to the dataset
 _C.DATASET.DATA_FORMAT = 'jpg'
 _C.DATASET.USE_DET_CACHE = True
 

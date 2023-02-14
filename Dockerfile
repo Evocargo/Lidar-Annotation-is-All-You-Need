@@ -47,7 +47,8 @@ RUN pip install --no-cache-dir torch==1.7.1 \
         prefetch_generator==1.0.1 \
         scikit-learn==1.1.2 \ 
         segmentation-models-pytorch==0.3.2 \
-        ipykernel
+        ipykernel \ 
+        notebook
 
 ARG USERNAME=lidar_fan
 ENV USERNAME=${USERNAME}
