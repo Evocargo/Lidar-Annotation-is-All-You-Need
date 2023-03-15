@@ -17,12 +17,11 @@ import torchvision.transforms as transforms
 import numpy as np
 
 from tensorboardX import SummaryWriter
-from lib.dataset.WaymoSegmDataset import WaymoSegmDataset
 from lib.dataset.Waymo2dSegmDataset import Waymo2dSegmDataset
 from lib.config.waymo import _C as cfg
 from lib.config.waymo import update_config
-from lib.core.loss_pspnet import get_loss
-from lib.core.function_pspnet import train, validate
+from lib.core.loss import get_loss
+from lib.core.function import train, validate
 from lib.utils.utils import get_optimizer, save_checkpoint, create_logger, select_device
 from lib.utils.dataloader import WeightedDataLoader
 from lib.utils import DataLoaderX
@@ -38,23 +37,10 @@ import segmentation_models_pytorch as smp
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Multitask network')
-    parser.add_argument('--modelDir',
-                        help='model directory',
-                        type=str,
-                        default='')
     parser.add_argument('--logDir',
                         help='log directory',
                         type=str,
                         default='runs/')
-    parser.add_argument('--dataDir',
-                        help='data directory',
-                        type=str,
-                        default='')
-    parser.add_argument('--prevModelDir',
-                        help='prev Model directory',
-                        type=str,
-                        default='')
-
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     args = parser.parse_args()
@@ -68,7 +54,7 @@ def main():
     update_config(cfg, args)
 
     # clearml setup
-    if cfg.TRAIN.CLEARML_LOGGING:
+    if cfg.CLEARML_LOGGING:
         task = init_clearml("YOLOP_waymo_exps_PSPNET")
         task.connect(cfg, "Config")
 
@@ -111,79 +97,24 @@ def main():
                    (1 - cfg.TRAIN.LRF) + cfg.TRAIN.LRF  # cosine
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     begin_epoch = cfg.TRAIN.BEGIN_EPOCH
-
-    # assign model params
-    model.gr = 1.0
-    # model.nc = len(cfg.MODEL.DET_CLASSES)
-
+    
     # TRAIN data loading
-    print("TRAIN: begin to load data")
+    print("begin to load data")
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    if cfg.DATASET.MASKS_ONLY:
-        print(f'We will use only 2d segmentation masks')
-        dataset1 = Waymo2dSegmDataset(
-            cfg=cfg,
-            is_train=True,
-            inputsize=cfg.MODEL.IMAGE_SIZE,
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                normalize,
-            ]),
-            data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
-            split='train',
-        )
-        dataset1.name = "Waymo Segmentation 2d"
-        datasets = [dataset1]
-        datasets_fractions = [1.]
-    elif cfg.DATASET.LIDAR_DATA_ONLY:
-        print(f'We will use only reprojected lidar segmentation masks')
-        dataset1 = WaymoSegmDataset(
-            cfg=cfg,
-            is_train=True,
-            inputsize=cfg.MODEL.IMAGE_SIZE,
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                normalize,
-            ]),
-            data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
-            split='train',
-        )
-        dataset1.name = "Waymo Segmentation repojected 3d"
-        datasets = [dataset1]
-        datasets_fractions = [1.]
-    else:
-        print(f'We will use both 2d masks and reprojected 3d data')
-        dataset1 = WaymoSegmDataset(
-            cfg=cfg,
-            is_train=True,
-            inputsize=cfg.MODEL.IMAGE_SIZE,
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                normalize,
-            ]),
-            data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm
-            split='train',
-            from_img=0, 
-            to_img=926,
-        )
-        dataset1.name = "Waymo Segmentation repojected 3d"
-
-        dataset2 = Waymo2dSegmDataset(
-            cfg=cfg,
-            is_train=True,
-            inputsize=cfg.MODEL.IMAGE_SIZE,
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                normalize,
-            ]),
-            data_path="/mnt/large/data/waymo_2d_3d_segm/",
-            split='train',
-            from_img=926, 
-            to_img=1852,
-        )
-        dataset2.name = "Waymo Segmentation 2d"
-        datasets = [dataset1, dataset2]
-        datasets_fractions = cfg.DATASET.DATASETS_FRACTIONS
+    dataset1 = Waymo2dSegmDataset(
+        cfg=cfg,
+        is_train=True,
+        inputsize=cfg.MODEL.IMAGE_SIZE,
+        transform=transforms.Compose([
+            transforms.ToTensor(),
+            normalize,
+        ]),
+        data_path="/mnt/large/data/waymo_2d_3d_segm", # /mnt/large/data/waymo_segm /mnt/large/data/waymo_lidar_segm
+        split='val', # TO FIX
+    )
+    dataset1.name = "Waymo Segmentation"
+    datasets = [dataset1]
+    datasets_fractions = cfg.DATASET.DATASETS_FRACTIONS
 
     dataset_samples_list = []
     num_samples = 0
@@ -211,10 +142,8 @@ def main():
         collate_fn=Waymo2dSegmDataset.collate_fn,
     )
     num_batch = len(train_loader)
-    print('TRAIN: load data finished')
     
     # VAL data loading
-    print("VAL: begin to load data")
     valid_dataset = Waymo2dSegmDataset(
         cfg=cfg,
         is_train=False,
@@ -235,7 +164,7 @@ def main():
         pin_memory=cfg.PIN_MEMORY,
         collate_fn=Waymo2dSegmDataset.collate_fn
     )
-    print('VAL: load data finished')
+    print('load data finished')
 
     # training
     num_warmup = max(round(cfg.TRAIN.WARMUP_EPOCHS * num_batch), 1000)
@@ -246,7 +175,7 @@ def main():
             train_loader.sampler.set_epoch(epoch)
         # train for one epoch
         train(cfg, train_loader, model, criterion, optimizer, scaler,
-              epoch, num_batch, num_warmup, writer_dict, logger, device, final_output_dir, Logger)
+              epoch, num_batch, num_warmup, writer_dict, logger, device, None, Logger)
         
         lr_scheduler.step()
 
@@ -264,7 +193,7 @@ def main():
                           da_seg_miou=da_segment_results[2])
             logger.info(msg)
 
-            if cfg.TRAIN.CLEARML_LOGGING:
+            if cfg.CLEARML_LOGGING:
                 Logger.current_logger().report_scalar(title="VALL_LOSS", series="VALL_LOSS", value=total_loss, iteration=epoch)
                 Logger.current_logger().report_scalar(title="DA_ACC", series="DA_ACC", value=da_segment_results[0], iteration=epoch)
                 Logger.current_logger().report_scalar(title="DA_IOU", series="DA_IOU", value=da_segment_results[1], iteration=epoch)

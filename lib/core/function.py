@@ -9,8 +9,7 @@ from torch.cuda import amp
 from tqdm import tqdm
 
 from lib.core.evaluate import SegmentationMetric
-from lib.utils import show_seg_result
-from evopy.images import write_video
+from lib.utils import show_seg_result, inverse_normalize, AverageMeter, write_video
 
 
 def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_batch, num_warmup,
@@ -41,9 +40,11 @@ def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_
                            (1 - config.TRAIN.LRF) + config.TRAIN.LRF  # cosine
             xi = [0, num_warmup]
             for j, x in enumerate(optimizer.param_groups):
-                x['lr'] = np.interp(num_iter, xi, [config.TRAIN.WARMUP_BIASE_LR if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
+                x['lr'] = np.interp(num_iter, xi, [config.TRAIN.WARMUP_BIASE_LR if j == 2 else 0.0, 
+                                                   x['initial_lr'] * lf(epoch)])
                 if 'momentum' in x:
-                    x['momentum'] = np.interp(num_iter, xi, [config.TRAIN.WARMUP_MOMENTUM, config.TRAIN.MOMENTUM])
+                    x['momentum'] = np.interp(num_iter, xi, [config.TRAIN.WARMUP_MOMENTUM, 
+                                                             config.TRAIN.MOMENTUM])
 
         data_time.update(time.time() - start)
         if not config.DEBUG:
@@ -65,8 +66,10 @@ def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_
         if config.vis_train_gt:
             if batch_i in [0, 1, 2]:
                 image_ind = 1 # just the first image from three diferent batches
-                img_inv_norm = inverse_normalize(input[image_ind], mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-                img_test = cv2.cvtColor(img_inv_norm.cpu().numpy().transpose(1, 2, 0) * 255, cv2.COLOR_BGR2RGB)
+                img_inv_norm = inverse_normalize(input[image_ind], mean=(0.485, 0.456, 0.406), 
+                                                 std=(0.229, 0.224, 0.225))
+                img_test = cv2.cvtColor(img_inv_norm.cpu().numpy().transpose(1, 2, 0) * 255, 
+                                        cv2.COLOR_BGR2RGB)
                 da_gt_mask = target[1][image_ind].unsqueeze(0)
                 _, da_gt_mask = torch.max(da_gt_mask, 1)
                 da_gt_mask = da_gt_mask.int().squeeze().cpu().numpy()
@@ -102,12 +105,14 @@ def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_
         if config.DEBUG_N_BATCHES > 0 and batch_i == config.DEBUG_N_BATCHES:
             break
 
-    if config.TRAIN.CLEARML_LOGGING:
-        clearml_logger.current_logger().report_scalar(title="TRAIN_LOSS", series="TRAIN_LOSS", value=losses.avg, iteration=epoch)
-        clearml_logger.current_logger().report_scalar(title="LOSSES", series="seg_da_LOSS", value=seg_da_loss.avg, iteration=epoch)
+    if config.CLEARML_LOGGING:
+        clearml_logger.current_logger().report_scalar(title="TRAIN_LOSS", series="TRAIN_LOSS", 
+                                                      value=losses.avg, iteration=epoch)
+        clearml_logger.current_logger().report_scalar(title="LOSSES", series="seg_da_LOSS", 
+                                                      value=seg_da_loss.avg, iteration=epoch)
 
 
-def validate(epoch, config, val_loader, val_dataset, model, criterion, output_dir, 
+def validate(epoch, config, val_loader, model, criterion, output_dir, 
              device='cpu', clearml_logger=None, half=False):
     """
     TODO
@@ -116,7 +121,7 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
     save_dir = output_dir + os.path.sep + 'visualization'
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
-    test_batch_size = config.TEST.BATCH_SIZE_PER_GPU * len(config.GPUS)
+    test_batch_size = config.TEST.BATCH_SIZE
     da_metric = SegmentationMetric(config.num_seg_class)
     
     losses = AverageMeter()
@@ -169,8 +174,10 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
             if config.TEST.PLOTS and not config.inference_visualization:
                 if batch_i == 0 or batch_i == 1 or batch_i == 2: # TO FIX 
                     image_ind = 0 # just the first image from three diferent batches
-                    img_inv_norm = inverse_normalize(img[image_ind], mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-                    img_test = cv2.cvtColor(img_inv_norm.cpu().numpy().transpose(1, 2, 0) * 255, cv2.COLOR_BGR2RGB)
+                    img_inv_norm = inverse_normalize(img[image_ind], mean=(0.485, 0.456, 0.406), 
+                                                     std=(0.229, 0.224, 0.225))
+                    img_test = cv2.cvtColor(img_inv_norm.cpu().numpy().transpose(1, 2, 0) * 255, 
+                                            cv2.COLOR_BGR2RGB)
                     
                     da_seg_mask = da_seg_out[image_ind].unsqueeze(0)
                     _, da_seg_mask = torch.max(da_seg_mask, 1) # if the first tensor (not road) max then 0, else 1 which is road
@@ -180,8 +187,12 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
                     da_gt_mask = da_gt_mask.int().squeeze().cpu().numpy()
 
                     img_test1 = img_test.copy()
-                    _img_with_segm = show_seg_result(img_test, da_seg_mask, batch_i, epoch, save_dir, config=config, clearml_logger=clearml_logger)
-                    _img_with_gt = show_seg_result(img_test1, da_gt_mask, batch_i, epoch, save_dir, is_gt=True, config=config, clearml_logger=clearml_logger)
+                    _img_with_segm = show_seg_result(img_test, da_seg_mask, batch_i, epoch, 
+                                                     save_dir, config=config, 
+                                                     clearml_logger=clearml_logger)
+                    _img_with_gt = show_seg_result(img_test1, da_gt_mask, batch_i, epoch, 
+                                                   save_dir, is_gt=True, config=config, 
+                                                   clearml_logger=clearml_logger)
             else:
                 for image_ind in range(nb): # for each image in batch
                     folder_to_save = Path(f"{save_dir}/inference_results/")
@@ -206,7 +217,9 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
                     da_seg_mask = da_seg_mask.int().squeeze().cpu().numpy()
 
                     img_test1 = img_test.copy()
-                    img_with_predict = show_seg_result(img_test1, da_seg_mask, batch_i, epoch, save_dir, config=config, clearml_logger=clearml_logger)
+                    img_with_predict = show_seg_result(img_test1, da_seg_mask, batch_i, epoch, 
+                                                       save_dir, config=config, 
+                                                       clearml_logger=clearml_logger)
                     cv2.imwrite(f"{folder_to_save}/{filename}", img_with_predict)
                     
                     if config.save_gt:
@@ -214,18 +227,21 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
                         _, da_gt_mask = torch.max(da_gt_mask, 1)
                         da_gt_mask = da_gt_mask.int().squeeze().cpu().numpy()
                         img_test2 = img_test.copy()
-                        img_with_gt = show_seg_result(img_test2, da_gt_mask, batch_i, epoch, save_dir, is_gt=True, config=config, clearml_logger=clearml_logger)
+                        img_with_gt = show_seg_result(img_test2, da_gt_mask, batch_i, epoch, 
+                                                      save_dir, is_gt=True, config=config, 
+                                                      clearml_logger=clearml_logger)
                         cv2.imwrite(f"{folder_to_save_gt}/{filename}", img_with_gt)                    
                     
                 if config.save_video:
-                    res_images.append(cv2.cvtColor(np.array(img_with_predict, dtype=np.uint8), cv2.COLOR_BGR2RGB))
+                    res_images.append(cv2.cvtColor(np.array(img_with_predict, dtype=np.uint8), 
+                                                   cv2.COLOR_BGR2RGB))
             
         # BATCH END
         if config.DEBUG_N_BATCHES > 0 and batch_i == config.DEBUG_N_BATCHES:
             break
     
     if config.save_video:
-        video_path = f"{save_dir}/segm_video_{val_loader.dataset.split}_yolop.mp4"
+        video_path = f"{save_dir}/segm_video_{val_loader.dataset.split}.mp4"
         write_video(res_images, video_path=video_path)
 
     model.float()  # for training
@@ -233,25 +249,3 @@ def validate(epoch, config, val_loader, val_dataset, model, criterion, output_di
 
     return da_segment_result, losses.avg
 
-
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count if self.count != 0 else 0
-
-def inverse_normalize(tensor, mean, std):
-    for t, m, s in zip(tensor, mean, std):
-        t.mul_(s).add_(m)
-    return tensor

@@ -1,21 +1,12 @@
 import os
 import logging
 import time
-from collections import namedtuple
 from pathlib import Path
-
+import cv2
 import torch
 import torch.optim as optim
-import torch.nn as nn
 import numpy as np
-from torch.utils.data import DataLoader
-from prefetch_generator import BackgroundGenerator
 from contextlib import contextmanager
-import re
-
-def clean_str(s):
-    # Cleans a string by replacing special characters with underscore _
-    return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
 
 def create_logger(cfg, cfg_path, phase='train', rank=-1):
     # set up logger dir
@@ -48,36 +39,6 @@ def create_logger(cfg, cfg_path, phase='train', rank=-1):
     else:
         return None, None, None
 
-
-def select_device(logger=None, device='', batch_size=None):
-    # device = 'cpu' or '0' or '0,1,2,3'
-    cpu_request = device.lower() == 'cpu'
-    if device and not cpu_request:  # if device requested other than 'cpu'
-        os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable
-        assert torch.cuda.is_available(), 'CUDA unavailable, invalid device %s requested' % device  # check availablity
-
-    cuda = False if cpu_request else torch.cuda.is_available()
-    if cuda:
-        c = 1024 ** 2  # bytes to MB
-        ng = torch.cuda.device_count()
-        if ng > 1 and batch_size:  # check that batch_size is compatible with device_count
-            assert batch_size % ng == 0, 'batch-size %g not multiple of GPU count %g' % (batch_size, ng)
-        x = [torch.cuda.get_device_properties(i) for i in range(ng)]
-        s = f'Using torch {torch.__version__} '
-        for i in range(0, ng):
-            if i == 1:
-                s = ' ' * len(s)
-            if logger:
-                logger.info("%sCUDA:%g (%s, %dMB)" % (s, i, x[i].name, x[i].total_memory / c))
-    else:
-        if logger:
-            logger.info(f'Using torch {torch.__version__} CPU')
-
-    if logger:
-        logger.info('')  # skip a line
-    return torch.device('cuda:0' if cuda else 'cpu')
-
-
 def get_optimizer(cfg, model):
     optimizer = None
     if cfg.TRAIN.OPTIMIZER == 'sgd':
@@ -94,9 +55,7 @@ def get_optimizer(cfg, model):
             lr=cfg.TRAIN.LR0,
             betas=(cfg.TRAIN.MOMENTUM, 0.999)
         )
-
     return optimizer
-
 
 def save_checkpoint(epoch, name, model, optimizer, output_dir, filename, is_best=False):
     model_state = model.state_dict()
@@ -111,7 +70,6 @@ def save_checkpoint(epoch, name, model, optimizer, output_dir, filename, is_best
         torch.save(checkpoint['best_state_dict'],
                    os.path.join(output_dir, 'model_best.pth'))
 
-
 def xyxy2xywh(x):
     # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
@@ -121,13 +79,89 @@ def xyxy2xywh(x):
     y[:, 3] = x[:, 3] - x[:, 1]  # height
     return y
 
-
 def time_synchronized():
     torch.cuda.synchronize() if torch.cuda.is_available() else None
     return time.time()
 
+def inverse_normalize(tensor, mean, std):
+    for t, m, s in zip(tensor, mean, std):
+        t.mul_(s).add_(m)
+    return tensor
 
-class DataLoaderX(DataLoader):
-    """prefetch dataloader"""
-    def __iter__(self):
-        return BackgroundGenerator(super().__iter__())
+@contextmanager
+def open_video(video_path, mode="r", *args):
+    """Context manager to work with cv2 videos
+        Mimics python's standard `open` function
+
+    Args:
+        video_path: path to video to open
+        mode: either 'r' for read or 'w' write
+        args: additional arguments passed to Capture or Writer
+            according to OpenCV documentation
+    Returns:
+        cv2.VideoCapture or cv2.VideoWriter depending on mode
+
+    Example of writing:
+        open_video(
+            out_path,
+            'w',
+            cv2.VideoWriter_fourcc(*'XVID'), # fourcc
+            15, # fps
+            (width, height), # frame size
+        )
+    """
+    video_path = Path(video_path)
+    if mode == "r":
+        video = cv2.VideoCapture(video_path.as_posix(), *args)
+    elif mode == "w":
+        video = cv2.VideoWriter(video_path.as_posix(), *args)
+    else:
+        raise ValueError(f'Incorrect open mode "{mode}"; "r" or "w" expected!')
+    if not video.isOpened():
+        raise ValueError(f"Video {video_path} is not opened!")
+    try:
+        yield video
+    finally:
+        video.release()
+
+def write_video(
+    images,
+    video_path,
+    codec_code: str = "XVID",
+    fps: int = 2,
+    is_color=True,
+):
+    """
+
+    Args:
+        images: List of RGB or binary images.
+        video_path: The name of the file to save the video to.
+        codec_code: FourCC - a 4-byte code used to specify the video codec.
+        fps: Framerate of the created video stream.
+        is_color: RGB images or not.
+
+    """
+    fourcc = cv2.VideoWriter_fourcc(*codec_code)
+    height, width, channels = images[0].shape
+    with open_video(video_path, "w", fourcc, fps, (width, height), is_color) as capture:
+        for frame in images:
+            if is_color:
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            capture.write(frame)
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count if self.count != 0 else 0

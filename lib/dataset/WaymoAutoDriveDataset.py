@@ -40,16 +40,9 @@ class WaymoAutoDriveDataset(Dataset):
             img_root, label_root = Path(cfg.DATASET.DATAROOT), Path(cfg.DATASET.LABELROOT)
             mask_root, lane_root= Path(cfg.DATASET.MASKROOT), Path(cfg.DATASET.LANEROOT)
         
-        if split:
-            indicator = split
-        elif is_train:
-            indicator = cfg.DATASET.TRAIN_SET
-        else:
-            indicator = cfg.DATASET.TEST_SET
-            
-        self.img_root = img_root / indicator
-        self.mask_root = mask_root / indicator
-        self.points_root = points_root / indicator
+        self.img_root = img_root / split
+        self.mask_root = mask_root / split
+        self.points_root = points_root / split
 
         self.img_list = sorted(list(self.img_root.iterdir()))
         self.mask_list = sorted(list(self.mask_root.iterdir()))
@@ -62,24 +55,10 @@ class WaymoAutoDriveDataset(Dataset):
         self.db = []
 
         self.data_format = cfg.DATASET.DATA_FORMAT
-
-        self.scale_factor = cfg.DATASET.SCALE_FACTOR
-        self.rotation_factor = cfg.DATASET.ROT_FACTOR
-        self.flip = cfg.DATASET.FLIP
-        self.color_rgb = cfg.DATASET.COLOR_RGB
-
-        # self.target_type = cfg.MODEL.TARGET_TYPE
-        self.shapes = np.array(cfg.DATASET.ORG_IMG_SIZE)
     
     def _get_db(self):
         """
         finished on children Dataset(for dataset which is not in Bdd100k format, rewrite children Dataset)
-        """
-        raise NotImplementedError
-
-    def evaluate(self, cfg, preds, output_dir):
-        """
-        finished on children dataset
         """
         raise NotImplementedError
     
@@ -180,7 +159,6 @@ class WaymoAutoDriveDataset(Dataset):
             )
 
             augment_hsv(img, hgain=self.cfg.DATASET.HSV_H, sgain=self.cfg.DATASET.HSV_S, vgain=self.cfg.DATASET.HSV_V)
-            # img, seg_label, labels = cutout(combination=combination, labels=labels)
 
             if len(labels):
                 # convert xyxy to xywh

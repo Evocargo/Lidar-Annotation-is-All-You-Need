@@ -43,8 +43,3 @@ class Waymo2dSegmDataset(Waymo2dAutoDriveDataset):
 
     def data_path(self, idx):
         return self.img_list[idx]
-
-    def evaluate(self, cfg, preds, output_dir, *args, **kwargs):
-        """  
-        """
-        pass
