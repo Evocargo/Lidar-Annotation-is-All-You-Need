@@ -25,6 +25,8 @@ python3 lib/waymo_process/create_2d3d_dataset.py {path_to_training_or_validation
 - --masks_only=True - for saving only 2d masks.
 - If no flag is chosen from lidar_data_only and masks_only, you will get dataset of images where 2d segmentation ground truth and point cloud segmentation ground truth are intersected. 
 
+_Note: val subset needs both lidar data and 2d masks, don't override flags --lidar_data_only and --masks_only when generating val subset_
+
 You should get 1852 images in train set and 315 images in val set with both 2d masks of road and reprojected points for road and other classes. 
 
 ### Docker
