@@ -4,21 +4,24 @@
 
 ## Results
 
-### Visualization of results
+![predictions_waymo](pictures/predictions_waymo.png)
+![predictions_kitti](pictures/predictions_kitti.png)
 
-![predictions_waymo](pictures/predictions.png)
-
-Comparison of predictions of three models on the Waymo Open Dataset. From top to bottom: 2D only, projected 3D only, mix 2D + projected 3D
+*Comparison of predictions of three models on the Waymo Open and KITTI-360 datasets. From top to bottom: 2D only, projected 3D only, mix 2D + projected 3D*
 
 ### Metrics
 
-![mixing_plot](pictures/mixing_plot.png)
+<img src="pictures/mixing_plot.png" alt="mixing_plot" width="500"/>
 
-Road segmentation results (% of IoU) on the validation split of the "Waymo full" dataset for models trained on different ratios of 2D image masks and lidar-based ground truth
+*Road segmentation results (% of IoU) on the validation split of the "Waymo full" dataset for models trained on different ratios of 2D image masks and lidar-based ground truth*
 
 ## Setup
 
 ### Dataset preparation
+
+<img src="pictures/data.png" alt="data" width="500"/>
+
+*Lidar-based road ground truth for three setups placed from top to bottom: Waymo Open Dataset (five proprietary lidar sensors), KITTI-360 (Velodyne HDL-64E lidar), Proprietary dataset (two Robosense RS-Helios lidars).*
 
 You can download filtered Waymo dataset (Waymo with intersection in the paper) from [the link](https://drive.google.com/file/d/1TAtAqf6xSmsp_IMqfKHTg4kchacuPXuk/view?usp=sharing).
 
@@ -98,19 +101,3 @@ python scripts/test.py --weights {path to the .pth weights} --save_video
 * [YOLOP](https://github.com/hustvl/YOLOP)
 * [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch)
 * [Waymo Open Dataset](https://github.com/waymo-research/waymo-open-dataset)
-
-## Internal info (to delete later)
-
-[Overleaf link](https://www.overleaf.com/1696216323nwdndpcgrhwx)
-
-[Paper concept and list of tasks with deadlines](https://evocargo.atlassian.net/wiki/spaces/PER/pages/717815826/-+Lidar+data+is+all+you+need+for+2d+road+segmentation)
-
-### TODO:
-
-* gdrive link to the dataset
-* lib/core/loss refactoring: MaskedLoss class
-* simplify and delete redundant:
-  * lib/config
-  * lib/utils
-* add pre-commit
-* save weights + folder with test images + make folder inference example
