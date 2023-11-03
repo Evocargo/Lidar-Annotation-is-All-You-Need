@@ -38,7 +38,7 @@ import segmentation_models_pytorch as smp
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train Multitask network')
+    parser = argparse.ArgumentParser(description='Train')
     parser.add_argument('--logDir',
                         help='log directory',
                         type=str,
@@ -121,7 +121,7 @@ def main():
                 transforms.ToTensor(),
                 normalize,
             ]),
-            data_path=data_path, # /mnt/large/data/waymo_segm
+            data_path=data_path,
             split='train',
         )
         dataset1.name = "Segmentation 2D"
@@ -153,7 +153,7 @@ def main():
                 transforms.ToTensor(),
                 normalize,
             ]),
-            data_path=data_path, # /mnt/large/data/waymo_segm
+            data_path=data_path,
             split='train',
             from_img=cfg.DATASET.from_img_3D, # for correct mixing on waymo
             to_img=cfg.DATASET.to_img_3D,
@@ -206,6 +206,7 @@ def main():
     print('TRAIN: load data finished')
     
     # VAL data loading
+    val_data_path = cfg.DATASET.VAL_PATH
     print("VAL: begin to load data")
     valid_dataset = SegmDataset2D(
         cfg=cfg,
@@ -215,7 +216,7 @@ def main():
             transforms.ToTensor(),
             normalize,
         ]),
-        data_path=data_path, # /mnt/large/data/waymo_segm
+        data_path=val_data_path,
         split='val',
     )
 

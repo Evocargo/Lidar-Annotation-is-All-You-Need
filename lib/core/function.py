@@ -203,7 +203,7 @@ def validate(epoch, config, val_loader, model, criterion, output_dir,
                         folder_to_save_gt.mkdir(parents=True, exist_ok=True)
 
                     if hasattr(val_loader.dataset, 'data_path'):
-                        filename = val_loader.dataset.data_path((batch_i * test_batch_size) + image_ind).name
+                        filename = f"{val_loader.dataset.data_path((batch_i * test_batch_size) + image_ind).name[:-4]}.jpg"
                     else:
                         filename = f"{batch_i}_{image_ind}_det_pred.jpg"
 
@@ -220,6 +220,8 @@ def validate(epoch, config, val_loader, model, criterion, output_dir,
                     img_with_predict = show_seg_result(img_test1, da_seg_mask, batch_i, epoch, 
                                                        save_dir, config=config, 
                                                        clearml_logger=clearml_logger)
+                    if config.vis_without_letterboxing:
+                        img_with_predict = img_with_predict[pad_h:height-pad_h, pad_w:width-pad_w, :]
                     cv2.imwrite(f"{folder_to_save}/{filename}", img_with_predict)
                     
                     if config.save_gt:
