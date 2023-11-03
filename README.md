@@ -19,7 +19,7 @@
 
 ### Dataset preparation
 
-<img src="pictures/data.png" alt="data" width="500"/>
+<img src="pictures/data.png" alt="data" width="700"/>
 
 *Lidar-based road ground truth for three setups placed from top to bottom: Waymo Open Dataset (five proprietary lidar sensors), KITTI-360 (Velodyne HDL-64E lidar), Proprietary dataset (two Robosense RS-Helios lidars).*
 
