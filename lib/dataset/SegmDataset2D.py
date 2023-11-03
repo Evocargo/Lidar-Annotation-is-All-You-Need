@@ -25,10 +25,10 @@ class SegmDataset2D(AutoDriveDataset2D):
         """
         print('building database...')
         gt_db = []
-        for _ind, img in tqdm(enumerate(self.img_list)):
-            image_path = str(img)
-            mask_path  = image_path.replace(self.img_root.as_posix(), 
-                                            self.mask_root.as_posix()).replace(".jpg", ".png")
+        for _ind, mask in tqdm(enumerate(self.mask_list)):
+            mask_path = str(mask)
+            image_path  = mask_path.replace(self.mask_root.as_posix(), 
+                                            self.img_root.as_posix()).replace(".png", ".jpg")
             gt = np.zeros((1, 5)) # zeros if we do not use this class!
 
             rec = [{
@@ -42,4 +42,4 @@ class SegmDataset2D(AutoDriveDataset2D):
         return gt_db
 
     def data_path(self, idx):
-        return self.img_list[idx]
+        return self.mask_list[idx]

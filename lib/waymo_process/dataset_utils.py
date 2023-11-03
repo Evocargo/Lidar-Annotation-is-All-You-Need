@@ -60,12 +60,12 @@ def save_2d_road_segm_from_frame(frame, frame_number, FILENAME, folder=Path('dat
 
     folder_to_save_images = folder / 'images' / subset
     folder_to_save_images.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite((folder_to_save_images / f'{FILENAME.name}_{"0" * (4 - len(str(frame_number)))}{frame_number}.jpg').as_posix(), 
+    cv2.imwrite((folder_to_save_images / f'{FILENAME.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.jpg').as_posix(), 
                 cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR))
 
     folder_to_save_seg_mask = folder / 'seg_masks' / subset
     folder_to_save_seg_mask.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite((folder_to_save_seg_mask / f'{FILENAME.name}_{"0" * (4 - len(str(frame_number)))}{frame_number}.png').as_posix(), segmap * 255)
+    cv2.imwrite((folder_to_save_seg_mask / f'{FILENAME.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.png').as_posix(), segmap * 255)
     if verbose:
         print('2d seg mask is saved')
 
@@ -199,19 +199,19 @@ def filter_and_save_data(frame, point_labels_all, cp_points_all, points_all,
     if save_images:
         folder_to_save_images = folder / 'images' / subset
         folder_to_save_images.mkdir(parents=True, exist_ok=True)
-        cv2.imwrite((folder_to_save_images / f'{FILENAME.name}_{"0" * (4 - len(str(frame_number)))}{frame_number}.jpg').as_posix(), cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR))
+        cv2.imwrite((folder_to_save_images / f'{FILENAME.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.jpg').as_posix(), cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR))
 
     points_xy_road = points_road[:, :2]
     points_int_road = (points_xy_road[:, [1, 0]]).astype(int)
     folder_to_save_points_road = folder / 'seg_points' / subset
     folder_to_save_points_road.mkdir(parents=True, exist_ok=True)
-    np.save((folder_to_save_points_road / f'{FILENAME.name}_{"0" * (4 - len(str(frame_number)))}{frame_number}.npy').as_posix(), points_int_road)
+    np.save((folder_to_save_points_road / f'{FILENAME.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.npy').as_posix(), points_int_road)
 
     points_xy = points_all[:, :2]
     points_int = (points_xy[:, [1, 0]]).astype(int)
     folder_to_save_points_all = folder / 'seg_points_total' / subset
     folder_to_save_points_all.mkdir(parents=True, exist_ok=True)
-    np.save((folder_to_save_points_all / f'{FILENAME.name}_{"0" * (4 - len(str(frame_number)))}{frame_number}.npy').as_posix(), points_int)
+    np.save((folder_to_save_points_all / f'{FILENAME.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.npy').as_posix(), points_int)
 
 def get_3d_data_from_frame(frame, frame_number, FILENAME, folder=Path('dataset_lidar_segm'), 
                            visualize=False, subset='val', save_images=True, verbose=False):

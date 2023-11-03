@@ -1,6 +1,7 @@
 from pathlib import Path
 from os import listdir
 from os.path import isfile, join
+from tqdm import tqdm
 import fire
 from dataset_utils import save_2d_road_segm_from_frame, get_3d_data_from_frame
 from waymo_open_dataset import dataset_pb2 as open_dataset
@@ -15,35 +16,43 @@ def save_dataset_from_records(records_path, lidar_data_only=False, masks_only=Fa
     records_list = [Path(records_path) / f for f in listdir(records_path) if isfile(join(records_path, f))]
     
     total_frames = 0
-    for FILENAME in records_list:
+    corrupted_frames = 0
+    for FILENAME in tqdm(records_list, total=len(records_list)):
         print(f'record - {FILENAME}')
         dataset = tf.data.TFRecordDataset(FILENAME, compression_type='')
-        frame_number = -1
-        for data in dataset:
+        frames_saved = 0
+        for frame_number, data in enumerate(dataset):
             frame = open_dataset.Frame()
             frame.ParseFromString(bytearray(data.numpy()))
             if lidar_data_only:
                 if frame.lasers[0].ri_return1.segmentation_label_compressed:
-                    frame_number += 1
+                    frames_saved += 1
                     get_3d_data_from_frame(frame, frame_number, FILENAME, folder=Path(save_folder), subset=subset, 
                                                 save_images=True, verbose=verbose)
             elif masks_only:
                 if frame.images[0].camera_segmentation_label.ByteSize() != 0:
-                    frame_number += 1
-                    save_2d_road_segm_from_frame(frame, frame_number, FILENAME, folder=Path(save_folder), 
-                                                 subset=subset, verbose=verbose)
+                    frames_saved += 1
+                    try:
+                        save_2d_road_segm_from_frame(frame, frame_number, FILENAME, folder=Path(save_folder), 
+                                                    subset=subset, verbose=verbose)
+                    except:
+                        print("Frame is corrupted")
+                        corrupted_frames += 1
+                        continue
+
             else:
                 if frame.images[0].camera_segmentation_label.ByteSize() != 0 and frame.lasers[0].ri_return1.segmentation_label_compressed:
-                    frame_number += 1
+                    frames_saved += 1
                     save_2d_road_segm_from_frame(frame, frame_number, FILENAME, folder=Path(save_folder), 
                                                  subset=subset, verbose=verbose)
                     get_3d_data_from_frame(frame, frame_number, FILENAME, folder=Path(save_folder), subset=subset, 
                                                 save_images=False, verbose=verbose)
             if verbose:
-                print(f'saved frame #{frame_number + 1}')
-        print(f'Saved {frame_number + 1} frames from this record')
-        total_frames += frame_number + 1
+                print(f'saved frame #{frames_saved }')
+        print(f'Saved {frames_saved} frames from this record')
+        total_frames += frames_saved
     print(f'Saved {total_frames} frames in total')
+    print(f'Corrupted frames: {corrupted_frames}')
 
 if __name__ == '__main__':
     fire.Fire(save_dataset_from_records)
