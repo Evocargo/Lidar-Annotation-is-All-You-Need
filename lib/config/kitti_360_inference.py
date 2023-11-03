@@ -55,6 +55,7 @@ _C.TEST.PLOTS = True
 _C.inference_visualization = True
 _C.save_gt = False
 _C.save_video = False
+_C.vis_without_letterboxing = False
 _C.dataset_split = 'val' #'test'
 
 

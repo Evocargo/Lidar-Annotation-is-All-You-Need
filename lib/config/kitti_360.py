@@ -37,8 +37,9 @@ _C.LOSS.MASKED = True # for lidar data based masked loss
 
 # DATASET related params
 _C.DATASET = CN(new_allowed=True)
-_C.DATASET.DATASET = 'kitti_360_PSPNET_exps' # name of the folder to save
-_C.DATASET.PATH = '/hdd2/kitti_360_paper_dataset/' # name of the folder to save
+_C.DATASET.DATASET = 'kitti_360_PSPNET_exps'
+_C.DATASET.PATH = '/hdd2/kitti_360_paper_dataset/'
+_C.DATASET.VAL_PATH = '/hdd2/kitti_360_paper_dataset/'
 _C.DATASET.DATASETS_FRACTIONS = [1.0, 1.0]
 _C.DATASET.DATA_FORMAT = 'png'
 _C.DATASET.AUTO_SHAPE = True

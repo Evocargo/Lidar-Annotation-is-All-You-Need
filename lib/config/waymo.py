@@ -5,7 +5,7 @@ _C = CN()
 _C.LOG_DIR = 'runs/'
 _C.GPUS = [0]     
 _C.WORKERS = 4
-_C.PIN_MEMORY = True
+_C.PIN_MEMORY = False
 _C.PRINT_FREQ = 20
 _C.DEBUG = False
 _C.DEBUG_N_BATCHES = 0
@@ -38,7 +38,8 @@ _C.LOSS.MASKED = True # for lidar data based masked loss
 # DATASET related params
 _C.DATASET = CN(new_allowed=True)
 _C.DATASET.DATASET = 'waymo_PSPNET_exps' # name of the folder to save
-_C.DATASET.PATH = '/data/waymo_2d_3d_segm/' # name of the folder to save
+_C.DATASET.PATH = '/mnt/large/data/waymo_2d_3d_segm'
+_C.DATASET.VAL_PATH = '/mnt/large/data/waymo_2d_3d_segm'
 _C.DATASET.DATASETS_FRACTIONS = [1.0, 1.0]
 _C.DATASET.DATA_FORMAT = 'jpg'
 _C.DATASET.AUTO_SHAPE = False
@@ -79,7 +80,7 @@ _C.TRAIN.NESTEROV = True
 _C.TRAIN.GAMMA1 = 0.99
 _C.TRAIN.GAMMA2 = 0.0
 _C.TRAIN.BEGIN_EPOCH = 0
-_C.TRAIN.END_EPOCH = 300
+_C.TRAIN.END_EPOCH = 200
 _C.TRAIN.VAL_FREQ = 1
 _C.TRAIN.BATCH_SIZE = 6
 _C.TRAIN.SHUFFLE = True # TO FIX
@@ -93,6 +94,7 @@ _C.TEST.PLOTS = True
 # Inference and vis
 _C.inference_visualization = False
 _C.save_video = False
+_C.save_gt = False
 _C.vis_train_gt = True
 
 
