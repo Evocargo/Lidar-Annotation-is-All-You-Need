@@ -8,7 +8,8 @@ from torch.utils.data import Dataset
 
 from ..utils import letterbox, augment_hsv, random_perspective, xyxy2xywh
 
-class WaymoAutoDriveDataset(Dataset):
+
+class AutoDriveDataset3D(Dataset):
     """
     A general Dataset for some common function
     """
@@ -89,7 +90,7 @@ class WaymoAutoDriveDataset(Dataset):
         data = self.db[idx]
         img = cv2.imread(data["image"], cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        
+
         seg_label = np.zeros(img.shape[:2])  
         total_points_label = np.zeros(img.shape[:2])  
 
@@ -104,27 +105,42 @@ class WaymoAutoDriveDataset(Dataset):
             seg_label = cv2.resize(seg_label, (int(w0 * r), int(h0 * r)), interpolation=interp)
             total_points_label = cv2.resize(total_points_label, (int(w0 * r), int(h0 * r)), interpolation=interp)
         h, w = img.shape[:2]
-        
+
         # gt points
+        points_r = 1 / r
         segm_points = np.load(Path(data["mask"]))
-        segm_points = segm_points // 3 # TO FIX spcific r
-        segm_points[:, 0] = np.clip(segm_points[:, 0], 0, 425)
-        segm_points[:, 1] = np.clip(segm_points[:, 1], 0, 639)
-        x = [x for x, y in segm_points]
-        y = [y for x, y in segm_points]  
-        seg_label[x, y] = 1
+        segm_points = segm_points // points_r
+        if len(segm_points.shape) != 2:
+            segm_points = np.empty((0, 2))
+
+        segm_points[:, 0] = np.clip(segm_points[:, 0], 0, int(h0 * r) - 1)
+        segm_points[:, 1] = np.clip(segm_points[:, 1], 0, int(w0 * r) - 1)
+        x = [int(x) for y, x in segm_points]
+        y = [int(y) for y, x in segm_points]
+
+        if self.cfg.DATASET.FILL_BETWEEN_POINTS:
+            y_border = (int(h0 * r) - 1)
+            x_add1 = [int(x) for y, x in segm_points if y > y_border / 2]
+            y_add1 = [np.clip(int(y + 1), 0, y_border) for y, x in segm_points if y > y_border / 2]
+            x_add2 = [int(x) for y, x in segm_points if y > y_border / 2]
+            y_add2 = [np.clip(int(y - 1), 0, y_border) for y, x in segm_points if y > y_border / 2]
+
+            seg_label[y_add1, x_add1] = 1
+            seg_label[y_add2, x_add2] = 1
+
+        seg_label[y, x] = 1
         seg_label = np.array(seg_label, dtype=np.uint8)
-        
+
         # total points for mask
         total_points = np.load(Path(data["points"]))
-        total_points = total_points // 3 # TO FIX spcific r
-        total_points[:, 0] = np.clip(total_points[:, 0], 0, 425)
-        total_points[:, 1] = np.clip(total_points[:, 1], 0, 639)
-        x = [x for x, y in total_points]
-        y = [y for x, y in total_points]  
+        total_points = total_points // points_r # TO FIX spcific r
+        total_points[:, 0] = np.clip(total_points[:, 0], 0, int(h0 * r) - 1)
+        total_points[:, 1] = np.clip(total_points[:, 1], 0, int(w0 * r) - 1)
+        x = [int(x) for x, y in total_points]
+        y = [int(y) for x, y in total_points]
         total_points_label[x, y] = 1
         total_points_label = np.array(total_points_label, dtype=np.uint8)
-        
+
         # we add noise to original image only
         noise = (np.random.rand(*total_points_label.shape) > 0.95).astype(np.uint8)
         # noise only for an upper half of the image
@@ -132,8 +148,11 @@ class WaymoAutoDriveDataset(Dataset):
         noise[total_points_label.shape[0] // 2:, :] = no_noise
         
         total_points_label = np.clip(total_points_label + noise, 0, 1)
-        
-        (img, seg_label, total_points_label), ratio, pad = letterbox((img, seg_label, total_points_label), resized_shape, auto=False, scaleup=self.is_train)
+
+        (img, seg_label, total_points_label), ratio, pad = letterbox(
+            (img, seg_label, total_points_label),
+            resized_shape, auto=self.cfg.DATASET.AUTO_SHAPE,
+            scaleup=self.is_train)
         shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling 
         
         det_label = data["label"]

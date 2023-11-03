@@ -11,16 +11,19 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
 from lib.utils import DataLoaderX
-from lib.dataset.Waymo2dSegmDataset import Waymo2dSegmDataset
-from lib.config.waymo_inference import _C as cfg
+from lib.dataset.SegmDataset2D import SegmDataset2D
+from lib.config.waymo_inference import _C as cfg_waymo
 from lib.config.waymo_inference import update_config
+from lib.config.kitti_360_inference import _C as cfg_kitti
 from lib.core.loss import get_loss
 from lib.core.function import validate
 from lib.utils.utils import create_logger
+
 # PSPNet
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 import segmentation_models_pytorch as smp
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Test Multitask network')
@@ -28,11 +31,24 @@ def parse_args():
     parser.add_argument('--inference_visualization', type=bool, default=False, help='save images with detection and segmentation results')
     parser.add_argument('--save_video', action='store_true', help='to save video with results')
     parser.add_argument('--save_gt', type=bool, default=False, help='to visualize gt')
+    parser.add_argument('--dataset_type',
+                        help='waymo or KITTI-360 dataset',
+                        type=str,
+                        default="waymo")
     args = parser.parse_args()
     return args
 
+
 def main():
     args = parse_args()
+
+    if args.dataset_type == "kitti":
+        cfg = cfg_kitti
+    elif args.dataset_type == "waymo":
+        cfg = cfg_waymo
+    else:
+        raise ValueError("Unsupported dataset type")
+
     update_config(cfg, args)
 
     logger, final_output_dir, _tb_log_dir = create_logger(cfg, cfg.LOG_DIR, 'test')
@@ -62,7 +78,7 @@ def main():
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     )
 
-    valid_dataset = Waymo2dSegmDataset(
+    valid_dataset = SegmDataset2D(
         cfg=cfg,
         is_train=False,
         inputsize=cfg.MODEL.IMAGE_SIZE,
@@ -70,7 +86,7 @@ def main():
             transforms.ToTensor(),
             normalize,
         ]),
-        data_path="/mnt/large/data/waymo_2d_3d_segm/",
+        data_path=cfg.DATASET.PATH,
         split=cfg.dataset_split,
     )
 
@@ -80,7 +96,7 @@ def main():
         shuffle=False,
         num_workers=cfg.WORKERS,
         pin_memory=False,
-        collate_fn=Waymo2dSegmDataset.collate_fn,
+        collate_fn=SegmDataset2D.collate_fn,
     )
     print('Load data finished')
     

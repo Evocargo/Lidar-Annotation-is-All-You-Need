@@ -17,9 +17,10 @@ import torchvision.transforms as transforms
 import numpy as np
 
 from tensorboardX import SummaryWriter
-from lib.dataset.WaymoSegmDataset import WaymoSegmDataset
-from lib.dataset.Waymo2dSegmDataset import Waymo2dSegmDataset
-from lib.config.waymo import _C as cfg
+from lib.dataset.SegmDataset3D import SegmDataset3D
+from lib.dataset.SegmDataset2D import SegmDataset2D
+from lib.config.waymo import _C as cfg_waymo
+from lib.config.kitti_360 import _C as cfg_kitti
 from lib.config.waymo import update_config
 from lib.core.loss import get_loss
 from lib.core.function import train, validate
@@ -35,12 +36,21 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 import segmentation_models_pytorch as smp
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Multitask network')
     parser.add_argument('--logDir',
                         help='log directory',
                         type=str,
                         default='runs/')
+    parser.add_argument('--load_from',
+                        help='log directory',
+                        type=str,
+                        default=None)
+    parser.add_argument('--dataset_type',
+                        help='waymo or KITTI-360 dataset',
+                        type=str,
+                        default="waymo")
     args = parser.parse_args()
     return args
 
@@ -48,6 +58,14 @@ def parse_args():
 def main():
     # set all the configurations
     args = parse_args()
+
+    if args.dataset_type == "kitti":
+        cfg = cfg_kitti
+    elif args.dataset_type == "waymo":
+        cfg = cfg_waymo
+    else:
+        raise ValueError("Unsupported dataset type")
+
     update_config(cfg, args)
 
     # Set DDP variables
@@ -79,6 +97,8 @@ def main():
         classes=2,                      # model output channels (number of classes in your dataset)
         activation='sigmoid',
     ).cuda()
+    if args.load_from:
+        model.load_state_dict(torch.load(args.load_from)['state_dict'])
 
     # define loss criterion and optimizer
     criterion = get_loss(cfg, device=device)
@@ -93,7 +113,7 @@ def main():
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     if cfg.DATASET.MASKS_ONLY:
         print(f'We will use only 2d segmentation masks')
-        dataset1 = Waymo2dSegmDataset(
+        dataset1 = SegmDataset2D(
             cfg=cfg,
             is_train=True,
             inputsize=cfg.MODEL.IMAGE_SIZE,
@@ -104,43 +124,12 @@ def main():
             data_path=data_path, # /mnt/large/data/waymo_segm
             split='train',
         )
-        dataset1.name = "Waymo Segmentation 2d"
+        dataset1.name = "Segmentation 2D"
         datasets = [dataset1]
         datasets_fractions = [1.]
     elif cfg.DATASET.LIDAR_DATA_ONLY:
         print(f'We will use only reprojected lidar segmentation masks')
-        dataset1 = WaymoSegmDataset(
-            cfg=cfg,
-            is_train=True,
-            inputsize=cfg.MODEL.IMAGE_SIZE,
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                normalize,
-            ]),
-            data_path=data_path, # /mnt/large/data/waymo_segm
-            split='train',
-        )
-        dataset1.name = "Waymo Segmentation repojected 3d"
-        datasets = [dataset1]
-        datasets_fractions = [1.]
-    else:
-        print(f'We will use both 2d masks and reprojected 3d data')
-        dataset1 = WaymoSegmDataset(
-            cfg=cfg,
-            is_train=True,
-            inputsize=cfg.MODEL.IMAGE_SIZE,
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                normalize,
-            ]),
-            data_path=data_path, # /mnt/large/data/waymo_segm
-            split='train',
-            from_img=0, # TO FIX hardcoded for correct mixing
-            to_img=926,
-        )
-        dataset1.name = "Waymo Segmentation repojected 3d"
-
-        dataset2 = Waymo2dSegmDataset(
+        dataset1 = SegmDataset3D(
             cfg=cfg,
             is_train=True,
             inputsize=cfg.MODEL.IMAGE_SIZE,
@@ -150,10 +139,37 @@ def main():
             ]),
             data_path=data_path,
             split='train',
-            from_img=926, 
-            to_img=1852,
         )
-        dataset2.name = "Waymo Segmentation 2d"
+        dataset1.name = "Segmentation repojected 3D"
+        datasets = [dataset1]
+        datasets_fractions = [1.]
+    else:
+        print(f'We will use both 2d masks and reprojected 3d data')
+        dataset1 = SegmDataset3D(
+            cfg=cfg,
+            is_train=True,
+            inputsize=cfg.MODEL.IMAGE_SIZE,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                normalize,
+            ]),
+            data_path=data_path, # /mnt/large/data/waymo_segm
+            split='train',
+        )
+        dataset1.name = "Segmentation repojected 3D"
+
+        dataset2 = SegmDataset2D(
+            cfg=cfg,
+            is_train=True,
+            inputsize=cfg.MODEL.IMAGE_SIZE,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                normalize,
+            ]),
+            data_path=data_path,
+            split='train',
+        )
+        dataset2.name = "Segmentation 2D"
         datasets = [dataset1, dataset2]
         datasets_fractions = cfg.DATASET.DATASETS_FRACTIONS
 
@@ -180,14 +196,14 @@ def main():
         batch_size=cfg.TRAIN.BATCH_SIZE,
         num_workers=cfg.WORKERS,
         pin_memory=cfg.PIN_MEMORY,
-        collate_fn=Waymo2dSegmDataset.collate_fn,
+        collate_fn=SegmDataset2D.collate_fn,
     )
     num_batch = len(train_loader)
     print('TRAIN: load data finished')
     
     # VAL data loading
     print("VAL: begin to load data")
-    valid_dataset = Waymo2dSegmDataset(
+    valid_dataset = SegmDataset2D(
         cfg=cfg,
         is_train=False,
         inputsize=cfg.MODEL.IMAGE_SIZE,
@@ -205,7 +221,7 @@ def main():
         shuffle=False,
         num_workers=cfg.WORKERS,
         pin_memory=cfg.PIN_MEMORY,
-        collate_fn=Waymo2dSegmDataset.collate_fn,
+        collate_fn=SegmDataset2D.collate_fn,
     )
     print('VAL: load data finished')
 
@@ -237,7 +253,7 @@ def main():
             logger.info(msg)
         
         # save checkpoint model and best model
-        if epoch % 50 == 0:
+        if epoch % 5 == 0:
             savepath = os.path.join(final_output_dir, f'epoch-{epoch}.pth')
             logger.info('=> saving checkpoint to {}'.format(savepath))
             save_checkpoint(

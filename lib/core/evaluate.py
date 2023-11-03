@@ -1,11 +1,12 @@
 import numpy as np
 
+
 class SegmentationMetric(object):
-    '''
+    """
     imgLabel [batch_size, height(144), width(256)]
     confusionMatrix [[0(TN),1(FP)],
                      [2(FN),3(TP)]]
-    '''
+    """
     def __init__(self, numClass):
         self.numClass = numClass
         self.confusionMatrix = np.zeros((self.numClass,)*2)
