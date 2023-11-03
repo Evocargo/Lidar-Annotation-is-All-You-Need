@@ -3,14 +3,14 @@ import torch
 
 class MultiHeadLoss(nn.Module):
     """
-    collect all the loss we need
+    Collect all the loss we need
     """
     def __init__(self, losses, cfg, lambdas=None):
         """
         Inputs:
-        - losses: (list)[nn.Module, nn.Module, ...]
-        - cfg: config object
-        - lambdas: (list) + IoU loss, weight for each loss
+            losses: (list)[nn.Module, nn.Module, ...]
+            cfg: config
+            lambdas: (list) + IoU loss, weight for each loss
         """
         super().__init__()
         # lambdas: [cls, obj, iou, la_seg, ll_seg, ll_iou]
@@ -25,12 +25,12 @@ class MultiHeadLoss(nn.Module):
     def forward(self, head_fields, head_targets, shapes):
         """
         Inputs:
-        - head_fields: (list) output from each task head
-        - head_targets: (list) ground-truth for each task head
+            head_fields: (list) output from each task head
+            head_targets: (list) ground-truth for each task head
 
         Returns:
-        - total_loss: sum of all the loss
-        - head_losses: (tuple) contain all loss[loss1, loss2, ...]
+            total_loss: sum of all the loss
+            head_losses: (tuple) contain all loss[loss1, loss2, ...]
 
         """
         total_loss, head_losses = self._forward_impl(head_fields, head_targets, shapes)
@@ -39,7 +39,6 @@ class MultiHeadLoss(nn.Module):
 
     def _forward_impl(self, predictions, targets, shapes):
         """
-
         Args:
             predictions: predicts of [[det_head1, det_head2, det_head3], drive_area_seg_head, lane_line_seg_head]
             targets: gts [det_targets, segment_targets, lane_targets]
@@ -71,15 +70,14 @@ class MultiHeadLoss(nn.Module):
 
 def get_loss(cfg, device):
     """
-    get MultiHeadLoss
+    Get loss
 
     Inputs:
-    -cfg: configuration use the loss_name part or 
-          function part(like regression classification)
-    -device: cpu or gpu device
+        cfg: config
+        device: cpu or gpu device
 
     Returns:
-    -loss: (MultiHeadLoss)
+        loss: (MultiHeadLoss)
 
     """
     # class loss criteria
