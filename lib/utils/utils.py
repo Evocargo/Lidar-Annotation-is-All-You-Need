@@ -8,6 +8,7 @@ import torch.optim as optim
 import numpy as np
 from contextlib import contextmanager
 
+
 def create_logger(cfg, cfg_path, phase='train', rank=-1):
     # set up logger dir
     dataset = cfg.DATASET.DATASET
@@ -39,6 +40,7 @@ def create_logger(cfg, cfg_path, phase='train', rank=-1):
     else:
         return None, None, None
 
+
 def get_optimizer(cfg, model):
     optimizer = None
     if cfg.TRAIN.OPTIMIZER == 'sgd':
@@ -57,6 +59,7 @@ def get_optimizer(cfg, model):
         )
     return optimizer
 
+
 def save_checkpoint(epoch, name, model, optimizer, output_dir, filename, is_best=False):
     model_state = model.state_dict()
     checkpoint = {
@@ -70,6 +73,7 @@ def save_checkpoint(epoch, name, model, optimizer, output_dir, filename, is_best
         torch.save(checkpoint['best_state_dict'],
                    os.path.join(output_dir, 'model_best.pth'))
 
+
 def xyxy2xywh(x):
     # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
@@ -79,14 +83,17 @@ def xyxy2xywh(x):
     y[:, 3] = x[:, 3] - x[:, 1]  # height
     return y
 
+
 def time_synchronized():
     torch.cuda.synchronize() if torch.cuda.is_available() else None
     return time.time()
+
 
 def inverse_normalize(tensor, mean, std):
     for t, m, s in zip(tensor, mean, std):
         t.mul_(s).add_(m)
     return tensor
+
 
 @contextmanager
 def open_video(video_path, mode="r", *args):
@@ -123,6 +130,7 @@ def open_video(video_path, mode="r", *args):
         yield video
     finally:
         video.release()
+
 
 def write_video(
     images,

@@ -34,13 +34,13 @@ _C.LOSS.CLS_POS_WEIGHT = 1.0  # classification loss positive weights
 _C.LOSS.OBJ_POS_WEIGHT = 1.0  # object loss positive weights
 _C.LOSS.SEG_POS_WEIGHT = 1.0  # segmentation loss positive weights
 _C.LOSS.DA_SEG_GAIN = 1.0  # driving area segmentation loss gain
-_C.LOSS.MASKED = True # for lidar data based masked loss
+_C.LOSS.MASKED = False # for lidar data based masked loss
 
 # DATASET related params
 _C.DATASET = CN(new_allowed=True)
-_C.DATASET.DATASET = 'waymo3d_exps' # name of the folder to save
-_C.DATASET.PATH = '/data/waymo_2d_3d_segm/' # path to the dataset
-_C.DATASET.DATA_FORMAT = 'jpg'
+_C.DATASET.DATASET = 'kitti_360_PSPNET_exps' # name of the folder to save
+_C.DATASET.PATH = '/hdd2/kitti_360_paper_dataset/' # name of the folder to save
+_C.DATASET.DATA_FORMAT = 'png'
 _C.DATASET.AUTO_SHAPE = True
 _C.DATASET.USE_DET_CACHE = True
 

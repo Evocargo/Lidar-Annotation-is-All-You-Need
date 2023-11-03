@@ -1,12 +1,13 @@
 import numpy as np
 from tqdm import tqdm
 
-from .Waymo2dAutoDriveDataset import Waymo2dAutoDriveDataset
+from .AutoDriveDataset3D import AutoDriveDataset3D
 
-class Waymo2dSegmDataset(Waymo2dAutoDriveDataset):
+class SegmDataset3D(AutoDriveDataset3D):
     def __init__(self, cfg, is_train, inputsize, transform=None, data_path=None, split=None,
                  from_img=None, to_img=None):
-        super().__init__(cfg, is_train, inputsize, transform, data_path, split, from_img, to_img)
+        super().__init__(cfg, is_train, inputsize, transform, data_path, split, from_img,
+                         to_img)
         self.db = self._get_db()
         self.cfg = cfg
 
@@ -25,21 +26,24 @@ class Waymo2dSegmDataset(Waymo2dAutoDriveDataset):
         """
         print('building database...')
         gt_db = []
-        for _ind, img in tqdm(enumerate(self.img_list)):
+        for ind, img in tqdm(enumerate(self.img_list)):
             image_path = str(img)
+            points_path = image_path.replace(self.img_root.as_posix(), 
+                                             self.points_root.as_posix()).replace(f".{self.cfg.DATASET.DATA_FORMAT}", ".npy")
             mask_path  = image_path.replace(self.img_root.as_posix(), 
-                                            self.mask_root.as_posix()).replace(".jpg", ".png")
+                                            self.mask_root.as_posix()).replace(f".{self.cfg.DATASET.DATA_FORMAT}", ".npy")
             gt = np.zeros((1, 5)) # zeros if we do not use this class!
 
             rec = [{
                 'image': image_path,
                 'label': gt,
                 'mask': mask_path,
+                'points': points_path,
             }]
 
             gt_db += rec
         print('database build finish')
         return gt_db
-
+    
     def data_path(self, idx):
         return self.img_list[idx]

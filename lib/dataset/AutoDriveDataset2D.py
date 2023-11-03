@@ -8,7 +8,8 @@ from torch.utils.data import Dataset
 
 from ..utils import letterbox, augment_hsv, random_perspective, xyxy2xywh
 
-class Waymo2dAutoDriveDataset(Dataset):
+
+class AutoDriveDataset2D(Dataset):
     """
     A general Dataset for some common function
     """
@@ -102,12 +103,12 @@ class Waymo2dAutoDriveDataset(Dataset):
         h, w = img.shape[:2]
         
         (img, seg_label, total_points_label), ratio, pad = letterbox((img, seg_label, total_points_label), 
-                                                                     resized_shape, auto=False, 
+                                                                     resized_shape, auto=self.cfg.DATASET.AUTO_SHAPE,
                                                                      scaleup=self.is_train)
         shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling 
         
         det_label = data["label"]
-        labels=[]
+        labels = []
         
         if det_label.size > 0:
             # Normalized xywh to pixel xyxy format
