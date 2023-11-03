@@ -48,6 +48,12 @@ _C.DATASET.WAYMO_DILATION = False
 _C.DATASET.MASKS_ONLY = False # 1
 _C.DATASET.LIDAR_DATA_ONLY = False # 2 ## if 1 and 2 are False --> mixing 
 
+# "waymo with intersection" mixing only, otherwise set to None
+_C.DATASET.from_img_3D = 0
+_C.DATASET.to_img_3D = 926
+_C.DATASET.from_img_2D = 926
+_C.DATASET.to_img_2D = 1852
+
 # Training data augmentation
 _C.DATASET.FLIP = True
 _C.DATASET.SCALE_FACTOR = 0.25

@@ -155,6 +155,8 @@ def main():
             ]),
             data_path=data_path, # /mnt/large/data/waymo_segm
             split='train',
+            from_img=cfg.DATASET.from_img_3D, # for correct mixing on waymo
+            to_img=cfg.DATASET.to_img_3D,
         )
         dataset1.name = "Segmentation repojected 3D"
 
@@ -168,6 +170,8 @@ def main():
             ]),
             data_path=data_path,
             split='train',
+            from_img=cfg.DATASET.from_img_2D, # for correct mixing on waymo
+            to_img=cfg.DATASET.to_img_2D,
         )
         dataset2.name = "Segmentation 2D"
         datasets = [dataset1, dataset2]
