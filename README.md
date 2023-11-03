@@ -23,11 +23,11 @@
 
 *Lidar-based road ground truth for three setups placed from top to bottom: Waymo Open Dataset (five proprietary lidar sensors), KITTI-360 (Velodyne HDL-64E lidar), Proprietary dataset (two Robosense RS-Helios lidars).*
 
-You can download filtered Waymo dataset (Waymo with intersection in the paper) from [the link](https://drive.google.com/file/d/1TAtAqf6xSmsp_IMqfKHTg4kchacuPXuk/view?usp=sharing).
+You can download the filtered Waymo dataset (Waymo with intersection in the paper) from [the link](https://drive.google.com/file/d/1TAtAqf6xSmsp_IMqfKHTg4kchacuPXuk/view?usp=sharing).
 
-Or filter dataset using our script:
+Or filter the full dataset using our script:
 
-Download training and validation folders of [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset) (we used [1.4.0 version](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false)). 2d segmentation ground truth and point cloud segmentation ground truth are made separately and not for all images. For the paper, we created a dataset from all images, for which annotations are intersected. To filter and save the dataset use these commands:
+Download the training and validation folders of [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset) (we used the [1.4.0 version](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false)). 2D segmentation ground truth and point cloud segmentation ground truth are made separately and not for all images. For the paper, we created a dataset from all images, for which annotations are intersected. To filter and save the dataset, use these commands:
 
 ```shell
 pip install -r lib/waymo_process/requirments.txt
@@ -36,12 +36,12 @@ python3 lib/waymo_process/create_2d3d_dataset.py {path_to_training_or_validation
 
 - --subset - folder name to save data
 - --lidar_data_only=True - for saving only reprojected point cloud points for both road (gt) and other classes (loss mask)
-- --masks_only=True - for saving only 2d masks.
-- If no flag is chosen from lidar_data_only and masks_only, you will get dataset of images where 2d segmentation ground truth and point cloud segmentation ground truth are intersected.
+- --masks_only=True - for saving only 2D masks.
+- If no flag is chosen from lidar_data_only and masks_only, you will get a dataset of images where 2D segmentation ground truth and point cloud segmentation ground truth are intersected.
 
-_Note: val subset needs both lidar data and 2d masks, don't override flags --lidar_data_only and --masks_only when generating val subset_
+_Note: val subset needs both lidar data and 2D masks, don't override flags --lidar_data_only and --masks_only when generating val subset_
 
-You should get 1852 images in train set and 315 images in val set with both 2d masks of road and reprojected points for road and other classes.
+You should get 1852 images in the train set and 315 images in the val set with both 2D masks of road and reprojected points for road and other classes.
 
 ### Docker
 
@@ -72,7 +72,7 @@ docker container rm lidar_segm
 
 ### Conda
 
-Alternatively you can use conda on ubuntu 20.04 with python 3.8.
+Alternatively, you can use conda on Ubuntu 20.04 with Python 3.8.
 
 ```shell
 conda env create -f environment.yml
@@ -80,17 +80,17 @@ conda env create -f environment.yml
 
 ## Training
 
-Specify path to the dataset (DATASET.PATH) and other training params in lib/config/waymo.py and then run the script:
+Specify the path to the dataset (DATASET.PATH) and other training parameters in lib/config/waymo.py and then run the script:
 
 ```shell
 python3 scripts/train.py
 ```
 
-By setting DATASET.MASKS_ONLY = True in config file, you will run model training using only 2d ground truth masks. DATASET.LIDAR_DATA_ONLY = True will lead to the training only using projected from the point cloud road ground truth. If both parameters are set to False (default), the model will train on mix of these two types of the ground truth. In all cases, the validation dataset requires 2d ground truth masks for metrics calculation.
+By setting DATASET.MASKS_ONLY = True in the config file, you will run model training using only 2D ground truth masks. DATASET.LIDAR_DATA_ONLY = True will lead to the training only using projected from the point cloud road ground truth. If both parameters are set to False (default), the model will train on a mix of these two types of ground truth. In all cases, the validation dataset requires 2D ground truth masks for metric calculation.
 
 ## Testing
 
-You can download model weights (mixing experiment, Waymo full in the paper) from [the link](https://drive.google.com/file/d/1c-LnNKLsb8Gpdu-vww4K3DCn8ymqQwHl/view?usp=sharing). Then Specify path to the dataset (DATASET.PATH) and other inference params in lib/config/waymo_inference.py and then run the script:
+You can download model weights (mixing experiment, Waymo full in the paper) from [the link](https://drive.google.com/file/d/1c-LnNKLsb8Gpdu-vww4K3DCn8ymqQwHl/view?usp=sharing). Then specify the path to the dataset (DATASET.PATH) and other inference parameters in lib/config/waymo_inference.py and then run the script:
 
 ```shell
 python scripts/test.py --weights {path to the .pth weights} --save_video
