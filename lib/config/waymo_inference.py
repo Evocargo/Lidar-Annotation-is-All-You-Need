@@ -27,22 +27,19 @@ _C.MODEL.SEGM_CLASSES = 'road'
 
 # Loss params
 _C.LOSS = CN(new_allowed=True)
-_C.LOSS.LOSS_NAME = ''
-_C.LOSS.MULTI_HEAD_LAMBDA = None
-_C.LOSS.FL_GAMMA = 0.0  # focal loss gamma
-_C.LOSS.CLS_POS_WEIGHT = 1.0  # classification loss positive weights
-_C.LOSS.OBJ_POS_WEIGHT = 1.0  # object loss positive weights
-_C.LOSS.SEG_POS_WEIGHT = 1.0  # segmentation loss positive weights
+_C.LOSS.LAMBDA = 1.0
+_C.LOSS.SEG_POS_WEIGHT = 1.0
 _C.LOSS.DA_SEG_GAIN = 1.0  # driving area segmentation loss gain
 _C.LOSS.MASKED = True # for lidar data based masked loss
 
 # DATASET related params
 _C.DATASET = CN(new_allowed=True)
-_C.DATASET.DATASET = 'waymo3d_exps' # name of the folder to save
-_C.DATASET.PATH = '/data/waymo_2d_3d_segm/' # path to the dataset
+_C.DATASET.DATASET = 'waymo_2d_3d_segm' # name of the folder to save
+_C.DATASET.PATH = '/mnt/large/data/waymo_2d_3d_segm' # path to the dataset
 _C.DATASET.DATA_FORMAT = 'jpg'
 _C.DATASET.AUTO_SHAPE = True
 _C.DATASET.USE_DET_CACHE = True
+_C.DATASET.WAYMO_DILATION = False
 
 # Train
 _C.TRAIN = CN(new_allowed=True) 
@@ -55,7 +52,8 @@ _C.TEST.PLOTS = True
 _C.inference_visualization = True
 _C.save_gt = False
 _C.save_video = False
-_C.dataset_split = 'val' #'test'
+_C.vis_without_letterboxing = True
+_C.dataset_split = 'val'
 
 
 def update_config(cfg, args):

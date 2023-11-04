@@ -55,7 +55,7 @@ def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_
             target = assign_target
         with amp.autocast(enabled=device.type != 'cpu'):
             outputs = model(input)
-            total_loss, lseg_da = criterion(outputs, target, shapes)
+            total_loss = criterion(outputs, target, shapes)
         
         # compute gradient and do update step
         optimizer.zero_grad()
@@ -80,8 +80,7 @@ def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_
 
         # measure accuracy and record loss
         input_size = input.size(0)
-        losses.update(total_loss.item(), input_size)
-        seg_da_loss.update(lseg_da, input_size)
+        seg_da_loss.update(total_loss.item(), input_size)
 
         # measure elapsed time
         batch_time.update(time.time() - start)
@@ -93,12 +92,12 @@ def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_
                     'Loss {loss.val:.5f} ({loss.avg:.5f})'.format(
                         epoch, batch_i, len(train_loader), batch_time=batch_time,
                         speed=input.size(0)/batch_time.val,
-                        data_time=data_time, loss=losses)
+                        data_time=data_time, loss=seg_da_loss)
             logger.info(msg)
 
             writer = writer_dict['writer']
             global_steps = writer_dict['train_global_steps']
-            writer.add_scalar('train_loss', losses.val, global_steps)
+            writer.add_scalar('train_loss', seg_da_loss.val, global_steps)
             writer_dict['train_global_steps'] = global_steps + 1
 
         # BATCH END
@@ -107,7 +106,7 @@ def train(config, train_loader, model, criterion, optimizer, scaler, epoch, num_
 
     if config.CLEARML_LOGGING:
         clearml_logger.current_logger().report_scalar(title="TRAIN_LOSS", series="TRAIN_LOSS", 
-                                                      value=losses.avg, iteration=epoch)
+                                                      value=seg_da_loss.avg, iteration=epoch)
         clearml_logger.current_logger().report_scalar(title="LOSSES", series="seg_da_LOSS", 
                                                       value=seg_da_loss.avg, iteration=epoch)
 
@@ -168,7 +167,7 @@ def validate(epoch, config, val_loader, model, criterion, output_dir,
             da_mIoU_seg.update(da_mIoU,img.size(0))
             
             # compute loss
-            total_loss, _lseg_da = criterion(da_seg_out, target, shapes)   
+            total_loss = criterion(da_seg_out, target, shapes)   
             losses.update(total_loss.item(), img.size(0))
 
             if config.TEST.PLOTS and not config.inference_visualization:
@@ -203,7 +202,7 @@ def validate(epoch, config, val_loader, model, criterion, output_dir,
                         folder_to_save_gt.mkdir(parents=True, exist_ok=True)
 
                     if hasattr(val_loader.dataset, 'data_path'):
-                        filename = val_loader.dataset.data_path((batch_i * test_batch_size) + image_ind).name
+                        filename = f"{val_loader.dataset.data_path((batch_i * test_batch_size) + image_ind).name[:-4]}.jpg"
                     else:
                         filename = f"{batch_i}_{image_ind}_det_pred.jpg"
 
@@ -220,6 +219,8 @@ def validate(epoch, config, val_loader, model, criterion, output_dir,
                     img_with_predict = show_seg_result(img_test1, da_seg_mask, batch_i, epoch, 
                                                        save_dir, config=config, 
                                                        clearml_logger=clearml_logger)
+                    if config.vis_without_letterboxing:
+                        img_with_predict = img_with_predict[pad_h:height-pad_h, pad_w:width-pad_w, :]
                     cv2.imwrite(f"{folder_to_save}/{filename}", img_with_predict)
                     
                     if config.save_gt:

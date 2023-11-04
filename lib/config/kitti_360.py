@@ -26,19 +26,16 @@ _C.MODEL.SEGM_CLASSES = 'road'
 
 # Loss params
 _C.LOSS = CN(new_allowed=True)
-_C.LOSS.LOSS_NAME = ''
-_C.LOSS.MULTI_HEAD_LAMBDA = None
-_C.LOSS.FL_GAMMA = 0.0  # focal loss gamma
-_C.LOSS.CLS_POS_WEIGHT = 1.0  # classification loss positive weights
-_C.LOSS.OBJ_POS_WEIGHT = 1.0  # object loss positive weights
-_C.LOSS.SEG_POS_WEIGHT = 1.0  # segmentation loss positive weights
+_C.LOSS.LAMBDA = 1.0
+_C.LOSS.SEG_POS_WEIGHT = 1.0
 _C.LOSS.DA_SEG_GAIN = 1.0  # driving area segmentation loss gain
 _C.LOSS.MASKED = True # for lidar data based masked loss
 
 # DATASET related params
 _C.DATASET = CN(new_allowed=True)
-_C.DATASET.DATASET = 'kitti_360_PSPNET_exps' # name of the folder to save
-_C.DATASET.PATH = '/hdd2/kitti_360_paper_dataset/' # name of the folder to save
+_C.DATASET.DATASET = 'kitti_360_PSPNET_exps'
+_C.DATASET.PATH = '/hdd2/kitti_360_paper_dataset/'
+_C.DATASET.VAL_PATH = '/hdd2/kitti_360_paper_dataset/'
 _C.DATASET.DATASETS_FRACTIONS = [1.0, 1.0]
 _C.DATASET.DATA_FORMAT = 'png'
 _C.DATASET.AUTO_SHAPE = True

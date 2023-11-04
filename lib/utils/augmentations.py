@@ -20,8 +20,6 @@ def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
 
 def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0, border=(0, 0)):
     """combination of img transform"""
-    # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
-    # targets = [cls, xyxy]
     img, gray, line = combination
     height = img.shape[0] + border[0] * 2  # shape(h,w,c)
     width = img.shape[1] + border[1] * 2
@@ -39,9 +37,7 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
     # Rotation and Scale
     R = np.eye(3)
     a = random.uniform(-degrees, degrees)
-    # a += random.choice([-180, -90, 0, 90])  # add 90deg rotations to small rotations
     s = random.uniform(1 - (scale * 0.5), 1 + scale) # CHANGED this to get more zoomed images TO FIX
-    # s = 2 ** random.uniform(-scale, scale)
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
 
     # Shear
@@ -67,12 +63,6 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
             gray = cv2.warpAffine(gray, M[:2], dsize=(width, height), borderValue=0, flags=cv2.INTER_NEAREST) # or INTER_LANCZOS4
             line = cv2.warpAffine(line, M[:2], dsize=(width, height), borderValue=0)
 
-    # Visualize
-    # import matplotlib.pyplot as plt
-    # ax = plt.subplots(1, 2, figsize=(12, 6))[1].ravel()
-    # ax[0].imshow(img[:, :, ::-1])  # base
-    # ax[1].imshow(img2[:, :, ::-1])  # warped
-
     # Transform label coordinates
     n = len(targets)
     if n:
@@ -90,15 +80,6 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
         y = xy[:, [1, 3, 5, 7]]
         xy = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T
 
-        # # apply angle-based reduction of bounding boxes
-        # radians = a * math.pi / 180
-        # reduction = max(abs(math.sin(radians)), abs(math.cos(radians))) ** 0.5
-        # x = (xy[:, 2] + xy[:, 0]) / 2
-        # y = (xy[:, 3] + xy[:, 1]) / 2
-        # w = (xy[:, 2] - xy[:, 0]) * reduction
-        # h = (xy[:, 3] - xy[:, 1]) * reduction
-        # xy = np.concatenate((x - w / 2, y - h / 2, x + w / 2, y + h / 2)).reshape(4, n).T
-
         # clip boxes
         xy[:, [0, 2]] = xy[:, [0, 2]].clip(0, width)
         xy[:, [1, 3]] = xy[:, [1, 3]].clip(0, height)
@@ -113,7 +94,6 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
 
 def letterbox(combination, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
     """Resize the input image and automatically padding to suitable shape :https://zhuanlan.zhihu.com/p/172121380"""
-    # Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232
     img, gray, line = combination
     shape = img.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
@@ -149,7 +129,6 @@ def letterbox(combination, new_shape=(640, 640), color=(114, 114, 114), auto=Tru
     img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
     gray = cv2.copyMakeBorder(gray, top, bottom, left, right, cv2.BORDER_CONSTANT, value=0)  # add border
     line = cv2.copyMakeBorder(line, top, bottom, left, right, cv2.BORDER_CONSTANT, value=0)  # add border
-    # print(img.shape)
 
     combination = (img, gray, line)
     return combination, ratio, (dw, dh)
