@@ -90,11 +90,32 @@ By setting DATASET.MASKS_ONLY = True in the config file, you will run model trai
 
 ## Testing
 
-You can download model weights (mixing experiment, Waymo full in the paper) from [the link](https://drive.google.com/file/d/1c-LnNKLsb8Gpdu-vww4K3DCn8ymqQwHl/view?usp=sharing). Then specify the path to the dataset (DATASET.PATH) and other inference parameters in lib/config/waymo_inference.py and then run the script:
+To test the model specify the path to the dataset (DATASET.PATH) and other inference parameters in lib/config/waymo_inference.py and then run the script:
 
 ```shell
 python scripts/test.py --weights {path to the .pth weights} --save_video
 ```
+
+Unfortunately, publishing the weights of a model trained with the use of the Waymo open dataset is prohibited by the dataset license. But the training experiments can be easily reproduced using our repository and the data provided.
+
+## Citation
+
+If you find our work useful for your research, please consider giving it a star ⭐ and citing the paper:
+
+```
+@misc{sharafutdinov2023lidar,
+      title={Lidar Annotation Is All You Need}, 
+      author={Dinar Sharafutdinov and Stanislav Kuskov and Saian Protasov and Alexey Voropaev},
+      year={2023},
+      eprint={2311.04777},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+```
+
+## License
+
+Project is distributed under the [MIT License](https://github.com/Evocargo/Lidar-Annotation-is-All-You-Need/blob/main/LICENSE)
 
 ## Acknowledgements
 
