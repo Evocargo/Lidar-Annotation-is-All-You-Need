@@ -1,41 +1,43 @@
 import random
 from pathlib import Path
+from typing import Callable, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset
+from yacs.config import CfgNode
 
 from ..utils import augment_hsv, letterbox, random_perspective, xyxy2xywh
 
 
 class AutoDriveDataset3D(Dataset):
-    """
-    A general Dataset for some common function
-    """
+    """A base Dataset  class for handling 3D point cloud data as segmentation masks."""
 
     def __init__(
         self,
-        cfg,
-        is_train,
-        inputsize=640,
-        transform=None,
-        data_path=None,
-        split=None,
-        from_img=None,
-        to_img=None,
+        cfg: CfgNode,
+        is_train: bool,
+        inputsize: Union[int, List[int]] = 640,
+        transform: Optional[Callable] = None,
+        data_path: Optional[str] = None,
+        split: Optional[str] = None,
+        from_img: Optional[int] = None,
+        to_img: Optional[int] = None,
     ):
         """
-        initial all the characteristic
+        Initialize the dataset with the given configurations.
 
-        Inputs:
-        -cfg: configurations
-        -is_train(bool): whether train set or not
-        -transform: ToTensor and Normalize
-
-        Returns:
-        None
+        Args:
+            cfg: Configuration object with dataset parameters.
+            is_train (bool): Whether the dataset is for training purposes.
+            inputsize (int or list): The input size for images.
+            transform (callable, optional): Transformations to apply to the images.
+            data_path (str, optional): Custom path to dataset images and 3D masks.
+            split (str, optional): The dataset split, e.g., 'train', 'val'.
+            from_img (int, optional): Index to slice the dataset from.
+            to_img (int, optional): Index to slice the dataset to.
         """
         self.cfg = cfg
         self.is_train = is_train
@@ -69,33 +71,29 @@ class AutoDriveDataset3D(Dataset):
         self.data_format = cfg.DATASET.DATA_FORMAT
 
     def _get_db(self):
-        """ """
+        """
+        Placeholder method for fetching the database.
+
+        Raises:
+            NotImplementedError: If the method is not overridden in a subclass.
+        """
         raise NotImplementedError
 
-    def __len__(self):
-        """
-        number of objects in the dataset
-        """
+    def __len__(self) -> int:
+        """Return the number of objects in the dataset."""
         return len(self.db)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple:
         """
-        Get input and groud-truth from database & add data augmentation on input
+        Get item from dataset at a specific index.
 
-        Inputs:
-        -idx: the index of image in self.db(database)(list)
-        self.db(list) [a,b,c,...]
-        a: (dictionary){'image':, 'information':}
+        Args:
+            idx (int): Index of the data to fetch from the dataset.
 
         Returns:
-        -image: transformed image, first passed the data augmentation in
-            __getitem__ function(type:numpy), then apply self.transform
-        -target: ground truth(det_gt,seg_gt)
-
-        function maybe useful
-        cv2.imread
-        cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
-        cv2.warpAffine
+            A tuple containing the transformed image tensor, a list of target tensors
+            (including detection ground truth and segmentation masks), the image path, and
+            the original and resized shapes for evaluation scaling purposes.
         """
         data = self.db[idx]
         img = cv2.imread(data["image"], cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
@@ -112,12 +110,8 @@ class AutoDriveDataset3D(Dataset):
         if r != 1:  # always resize down, only resize up if training with augmentation
             interp = cv2.INTER_AREA if r < 1 else cv2.INTER_LINEAR
             img = cv2.resize(img, (int(w0 * r), int(h0 * r)), interpolation=interp)
-            seg_label = cv2.resize(
-                seg_label, (int(w0 * r), int(h0 * r)), interpolation=interp
-            )
-            total_points_label = cv2.resize(
-                total_points_label, (int(w0 * r), int(h0 * r)), interpolation=interp
-            )
+            seg_label = cv2.resize(seg_label, (int(w0 * r), int(h0 * r)), interpolation=interp)
+            total_points_label = cv2.resize(total_points_label, (int(w0 * r), int(h0 * r)), interpolation=interp)
         h, w = img.shape[:2]
 
         # gt points
@@ -135,17 +129,9 @@ class AutoDriveDataset3D(Dataset):
         if self.cfg.DATASET.FILL_BETWEEN_POINTS:
             y_border = int(h0 * r) - 1
             x_add1 = [int(x) for y, x in segm_points if y > y_border / 2]
-            y_add1 = [
-                np.clip(int(y + 1), 0, y_border)
-                for y, x in segm_points
-                if y > y_border / 2
-            ]
+            y_add1 = [np.clip(int(y + 1), 0, y_border) for y, x in segm_points if y > y_border / 2]
             x_add2 = [int(x) for y, x in segm_points if y > y_border / 2]
-            y_add2 = [
-                np.clip(int(y - 1), 0, y_border)
-                for y, x in segm_points
-                if y > y_border / 2
-            ]
+            y_add2 = [np.clip(int(y - 1), 0, y_border) for y, x in segm_points if y > y_border / 2]
 
             seg_label[y_add1, x_add1] = 1
             seg_label[y_add2, x_add2] = 1
@@ -166,9 +152,7 @@ class AutoDriveDataset3D(Dataset):
         # we add noise to original image only
         noise = (np.random.rand(*total_points_label.shape) > 0.95).astype(np.uint8)
         # noise only for an upper half of the image
-        no_noise = np.zeros(
-            (total_points_label.shape[0] // 2, total_points_label.shape[1])
-        )
+        no_noise = np.zeros((total_points_label.shape[0] // 2, total_points_label.shape[1]))
         noise[total_points_label.shape[0] // 2 :, :] = no_noise
 
         total_points_label = np.clip(total_points_label + noise, 0, 1)
@@ -187,12 +171,8 @@ class AutoDriveDataset3D(Dataset):
         if det_label.size > 0:
             # Normalized xywh to pixel xyxy format
             labels = det_label.copy()
-            labels[:, 1] = (
-                ratio[0] * w * (det_label[:, 1] - det_label[:, 3] / 2) + pad[0]
-            )  # pad width
-            labels[:, 2] = (
-                ratio[1] * h * (det_label[:, 2] - det_label[:, 4] / 2) + pad[1]
-            )  # pad height
+            labels[:, 1] = ratio[0] * w * (det_label[:, 1] - det_label[:, 3] / 2) + pad[0]  # pad width
+            labels[:, 2] = ratio[1] * h * (det_label[:, 2] - det_label[:, 4] / 2) + pad[1]  # pad height
             labels[:, 3] = ratio[0] * w * (det_label[:, 1] + det_label[:, 3] / 2) + pad[0]
             labels[:, 4] = ratio[1] * h * (det_label[:, 2] + det_label[:, 4] / 2) + pad[1]
 
@@ -278,12 +258,8 @@ class AutoDriveDataset3D(Dataset):
         # total_points_label = np.clip(total_points_label + noise, 0, 1)
 
         # convert to 0-255 to feed to self.Tensor
-        _, points1 = cv2.threshold(
-            total_points_label, 0, 255, cv2.THRESH_BINARY
-        )  # mask of points
-        _, points2 = cv2.threshold(
-            total_points_label, 0, 255, cv2.THRESH_BINARY
-        )  # the same mask
+        _, points1 = cv2.threshold(total_points_label, 0, 255, cv2.THRESH_BINARY)  # mask of points
+        _, points2 = cv2.threshold(total_points_label, 0, 255, cv2.THRESH_BINARY)  # the same mask
 
         points1 = self.Tensor(points1.copy())
         points2 = self.Tensor(points2.copy())
@@ -296,7 +272,22 @@ class AutoDriveDataset3D(Dataset):
         return img, target, data["image"], shapes
 
     @staticmethod
-    def collate_fn(batch):
+    def collate_fn(batch: List) -> Tuple:
+        """
+        Custom collate function to combine multiple data samples into a batch.
+
+        Args:
+            batch (list of tuples): A list of tuples where each tuple consists of an image
+            tensor, a list of target tensors, the image path, and the shapes.
+
+        Returns:
+            A tuple containing the following elements:
+            - A tensor stack of all images in the batch.
+            - A list of combined targets (detection labels, segmentation labels,
+                and point labels).
+            - A list of image paths.
+            - A list of shape tuples.
+        """
         img, label, paths, shapes = zip(*batch)
         label_det, label_seg, label_points = [], [], []
         for i, l in enumerate(label):
@@ -307,11 +298,7 @@ class AutoDriveDataset3D(Dataset):
             label_points.append(l_points)
         return (
             torch.stack(img, 0),
-            [
-                torch.cat(label_det, 0),
-                torch.stack(label_seg, 0),
-                torch.stack(label_points, 0),
-            ],
+            [torch.cat(label_det, 0), torch.stack(label_seg, 0), torch.stack(label_points, 0)],
             paths,
             shapes,
         )

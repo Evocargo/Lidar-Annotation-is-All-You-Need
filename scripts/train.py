@@ -47,9 +47,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train")
     parser.add_argument("--logDir", help="log directory", type=str, default="runs/")
     parser.add_argument("--load_from", help="log directory", type=str, default=None)
-    parser.add_argument(
-        "--dataset_type", help="waymo or KITTI-360 dataset", type=str, default="waymo"
-    )
+    parser.add_argument("--dataset_type", help="waymo or KITTI-360 dataset", type=str, default="waymo")
     args = parser.parse_args()
     return args
 
@@ -102,31 +100,23 @@ def main():
     # define loss criterion and optimizer
     criterion = get_loss(cfg, device=device)
     optimizer = get_optimizer(cfg, model)
+    # cosine
     lf = (
-        lambda x: ((1 + math.cos(x * math.pi / cfg.TRAIN.END_EPOCH)) / 2)
-        * (1 - cfg.TRAIN.LRF)
-        + cfg.TRAIN.LRF
-    )  # cosine
+        lambda x: ((1 + math.cos(x * math.pi / cfg.TRAIN.END_EPOCH)) / 2) * (1 - cfg.TRAIN.LRF) + cfg.TRAIN.LRF
+    )  # noqa: E731
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     begin_epoch = cfg.TRAIN.BEGIN_EPOCH
 
     print("TRAIN: begin to load data")
     data_path = cfg.DATASET.PATH
-    normalize = transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     if cfg.DATASET.MASKS_ONLY:
         print("We will use only 2d segmentation masks")
         dataset1 = SegmDataset2D(
             cfg=cfg,
             is_train=True,
             inputsize=cfg.MODEL.IMAGE_SIZE,
-            transform=transforms.Compose(
-                [
-                    transforms.ToTensor(),
-                    normalize,
-                ]
-            ),
+            transform=transforms.Compose([transforms.ToTensor(), normalize]),
             data_path=data_path,
             split="train",
         )
@@ -139,12 +129,7 @@ def main():
             cfg=cfg,
             is_train=True,
             inputsize=cfg.MODEL.IMAGE_SIZE,
-            transform=transforms.Compose(
-                [
-                    transforms.ToTensor(),
-                    normalize,
-                ]
-            ),
+            transform=transforms.Compose([transforms.ToTensor(), normalize]),
             data_path=data_path,
             split="train",
         )
@@ -157,12 +142,7 @@ def main():
             cfg=cfg,
             is_train=True,
             inputsize=cfg.MODEL.IMAGE_SIZE,
-            transform=transforms.Compose(
-                [
-                    transforms.ToTensor(),
-                    normalize,
-                ]
-            ),
+            transform=transforms.Compose([transforms.ToTensor(), normalize]),
             data_path=data_path,
             split="train",
             from_img=cfg.DATASET.from_img_3D,  # for correct mixing on waymo
@@ -174,12 +154,7 @@ def main():
             cfg=cfg,
             is_train=True,
             inputsize=cfg.MODEL.IMAGE_SIZE,
-            transform=transforms.Compose(
-                [
-                    transforms.ToTensor(),
-                    normalize,
-                ]
-            ),
+            transform=transforms.Compose([transforms.ToTensor(), normalize]),
             data_path=data_path,
             split="train",
             from_img=cfg.DATASET.from_img_2D,  # for correct mixing on waymo

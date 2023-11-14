@@ -22,11 +22,7 @@ def save_dataset_from_records(
     verbose=False,
 ):
     print(records_path)
-    records_list = [
-        Path(records_path) / f
-        for f in listdir(records_path)
-        if isfile(join(records_path, f))
-    ]
+    records_list = [Path(records_path) / f for f in listdir(records_path) if isfile(join(records_path, f))]
 
     total_frames = 0
     corrupted_frames = 0
@@ -90,7 +86,7 @@ def save_dataset_from_records(
                         verbose=verbose,
                     )
             if verbose:
-                print(f"saved frame #{frames_saved }")
+                print(f"saved frame #{frames_saved}")
         print(f"Saved {frames_saved} frames from this record")
         total_frames += frames_saved
     print(f"Saved {total_frames} frames in total")

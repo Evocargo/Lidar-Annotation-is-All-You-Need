@@ -13,18 +13,14 @@ from waymo_open_dataset.utils import camera_segmentation_utils, frame_utils
 
 
 def get_road_seg(semantic_label, iou_thresh=0.75, min_contour_size=500):
-    road = (
-        (semantic_label == 20) | (semantic_label == 21) | (semantic_label == 22)
-    ).astype(np.uint8)
+    road = ((semantic_label == 20) | (semantic_label == 21) | (semantic_label == 22)).astype(np.uint8)
     ground = (semantic_label == 26).astype(np.uint8)
 
     cnts, hiers = cv2.findContours(road, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     road_filled = np.zeros_like(road)
     road_filled = cv2.fillPoly(road_filled, cnts, color=1)
 
-    cnts, hiers = cv2.findContours(ground, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[
-        -2:
-    ]
+    cnts, hiers = cv2.findContours(ground, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
     for cnt in cnts:
         if cnt.shape[0] <= 4:
             continue
@@ -48,9 +44,7 @@ def calc_iou(mask1, mask2):
 def get_2d_road_segm_with_image(frame):
     img = frame.images[0]
     seg = img.camera_segmentation_label
-    panoptic_label = camera_segmentation_utils.decode_single_panoptic_label_from_proto(
-        seg
-    )
+    panoptic_label = camera_segmentation_utils.decode_single_panoptic_label_from_proto(seg)
     (
         semantic_label,
         instance_label,
@@ -84,10 +78,7 @@ def save_2d_road_segm_from_frame(
     folder_to_save_images = folder / "images" / subset
     folder_to_save_images.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(
-        (
-            folder_to_save_images
-            / f'{filename.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.jpg'
-        ).as_posix(),
+        (folder_to_save_images / f'{filename.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.jpg').as_posix(),
         cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR),
     )
 
@@ -95,8 +86,7 @@ def save_2d_road_segm_from_frame(
     folder_to_save_seg_mask.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(
         (
-            folder_to_save_seg_mask
-            / f'{filename.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.png'
+            folder_to_save_seg_mask / f'{filename.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.png'
         ).as_posix(),
         segmap * 255,
     )
@@ -104,9 +94,7 @@ def save_2d_road_segm_from_frame(
         print("2d seg mask is saved")
 
 
-def convert_range_image_to_point_cloud_labels(
-    frame, range_images, segmentation_labels, ri_index=0
-):
+def convert_range_image_to_point_cloud_labels(frame, range_images, segmentation_labels, ri_index=0):
     """Convert segmentation labels from range images to point clouds.
 
     Args:
@@ -125,9 +113,7 @@ def convert_range_image_to_point_cloud_labels(
     point_labels = []
     for c in calibrations:
         range_image = range_images[c.name][ri_index]
-        range_image_tensor = tf.reshape(
-            tf.convert_to_tensor(range_image.data), range_image.shape.dims
-        )
+        range_image_tensor = tf.reshape(tf.convert_to_tensor(range_image.data), range_image.shape.dims)
         range_image_mask = range_image_tensor[..., 0] > 0
 
         if c.name in segmentation_labels:
@@ -162,9 +148,7 @@ def plot_image(camera_image):
     plt.imshow(tf.image.decode_jpeg(camera_image.image))
 
 
-def plot_points_on_image_upd(
-    projected_points, camera_image, rgba_func, point_size=5.0, visualize=True
-):
+def plot_points_on_image_upd(projected_points, camera_image, rgba_func, point_size=5.0, visualize=True):
     """Plots points on a camera image.
 
     Args:
@@ -192,9 +176,7 @@ def plot_points_on_image_upd(
     return tf.image.decode_jpeg(camera_image.image), projected_points
 
 
-def visualize_segm_pointcloud_on_image(
-    frame, cp_points_all, points_all, img_id=0, visualize=True
-):
+def visualize_segm_pointcloud_on_image(frame, cp_points_all, points_all, img_id=0, visualize=True):
     images = sorted(frame.images, key=lambda i: i.name)
 
     # The distance between lidar points and vehicle frame origin.
@@ -203,14 +185,10 @@ def visualize_segm_pointcloud_on_image(
 
     mask = tf.equal(cp_points_all_tensor[..., 0], images[img_id].name)
 
-    cp_points_all_tensor = tf.cast(
-        tf.gather_nd(cp_points_all_tensor, tf.where(mask)), dtype=tf.float32
-    )
+    cp_points_all_tensor = tf.cast(tf.gather_nd(cp_points_all_tensor, tf.where(mask)), dtype=tf.float32)
     points_all_tensor = tf.gather_nd(points_all_tensor, tf.where(mask))  # for distance
 
-    projected_points_all_from_raw_data = tf.concat(
-        [cp_points_all_tensor[..., 1:3], points_all_tensor], axis=-1
-    ).numpy()
+    projected_points_all_from_raw_data = tf.concat([cp_points_all_tensor[..., 1:3], points_all_tensor], axis=-1).numpy()
 
     image, points = plot_points_on_image_upd(
         projected_points_all_from_raw_data,
@@ -239,14 +217,10 @@ def filter_and_save_data(
         folder = Path("dataset_lidar_segm")
     # only road
     cp_points_all_filtered_road = cp_points_all[
-        (point_labels_all[:, 1] == 18)
-        | (point_labels_all[:, 1] == 19)
-        | (point_labels_all[:, 1] == 20)
+        (point_labels_all[:, 1] == 18) | (point_labels_all[:, 1] == 19) | (point_labels_all[:, 1] == 20)
     ]
     points_all_input_filtered_road = points_all[
-        (point_labels_all[:, 1] == 18)
-        | (point_labels_all[:, 1] == 19)
-        | (point_labels_all[:, 1] == 20)
+        (point_labels_all[:, 1] == 18) | (point_labels_all[:, 1] == 19) | (point_labels_all[:, 1] == 20)
     ]
 
     ind = 0  # TYPE_UNDEFINED
@@ -270,8 +244,7 @@ def filter_and_save_data(
         folder_to_save_images.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(
             (
-                folder_to_save_images
-                / f'{filename.name}_{"0"*(5 - len(str(frame_number)))}{frame_number}.jpg'
+                folder_to_save_images / f'{filename.name}_{"0"*(5 - len(str(frame_number)))}{frame_number}.jpg'
             ).as_posix(),
             cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR),
         )
@@ -282,8 +255,7 @@ def filter_and_save_data(
     folder_to_save_points_road.mkdir(parents=True, exist_ok=True)
     np.save(
         (
-            folder_to_save_points_road
-            / f'{filename.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.npy'
+            folder_to_save_points_road / f'{filename.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.npy'
         ).as_posix(),
         points_int_road,
     )
@@ -294,8 +266,7 @@ def filter_and_save_data(
     folder_to_save_points_all.mkdir(parents=True, exist_ok=True)
     np.save(
         (
-            folder_to_save_points_all
-            / f'{filename.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.npy'
+            folder_to_save_points_all / f'{filename.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.npy'
         ).as_posix(),
         points_int,
     )
@@ -328,12 +299,8 @@ def get_3d_data_from_frame(
         frame, range_images, camera_projections, range_image_top_pose, ri_index=1
     )
 
-    point_labels = convert_range_image_to_point_cloud_labels(
-        frame, range_images, segmentation_labels
-    )
-    point_labels_ri2 = convert_range_image_to_point_cloud_labels(
-        frame, range_images, segmentation_labels, ri_index=1
-    )
+    point_labels = convert_range_image_to_point_cloud_labels(frame, range_images, segmentation_labels)
+    point_labels_ri2 = convert_range_image_to_point_cloud_labels(frame, range_images, segmentation_labels, ri_index=1)
 
     # 3d points in vehicle frame
     points_all = np.concatenate(points, axis=0)

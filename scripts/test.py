@@ -41,13 +41,9 @@ def parse_args():
         default=False,
         help="save images with detection and segmentation results",
     )
-    parser.add_argument(
-        "--save_video", action="store_true", help="to save video with results"
-    )
+    parser.add_argument("--save_video", action="store_true", help="to save video with results")
     parser.add_argument("--save_gt", type=bool, default=False, help="to visualize gt")
-    parser.add_argument(
-        "--dataset_type", help="waymo or KITTI-360 dataset", type=str, default="waymo"
-    )
+    parser.add_argument("--dataset_type", help="waymo or KITTI-360 dataset", type=str, default="waymo")
     args = parser.parse_args()
     return args
 
@@ -87,20 +83,13 @@ def main():
     criterion = get_loss(cfg, device=device)
 
     print("DATA LOAD")
-    normalize = transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     valid_dataset = SegmDataset2D(
         cfg=cfg,
         is_train=False,
         inputsize=cfg.MODEL.IMAGE_SIZE,
-        transform=transforms.Compose(
-            [
-                transforms.ToTensor(),
-                normalize,
-            ]
-        ),
+        transform=transforms.Compose([transforms.ToTensor(), normalize]),
         data_path=cfg.DATASET.PATH,
         split=cfg.dataset_split,
     )
@@ -117,18 +106,10 @@ def main():
 
     epoch = 0  # special for test
     da_segment_results, total_loss = validate(
-        epoch,
-        cfg,
-        valid_loader,
-        model,
-        criterion,
-        final_output_dir,
-        device=device,
+        epoch, cfg, valid_loader, model, criterion, final_output_dir, device=device
     )
     msg = "Test:    Loss({loss:.3f})\n"(
-        "Driving area Segment: Acc({da_seg_acc:.3f})    "
-        "IOU ({da_seg_iou:.3f})    "
-        "mIOU({da_seg_miou:.3f})\n"
+        "Driving area Segment: Acc({da_seg_acc:.3f})    " "IOU ({da_seg_iou:.3f})    " "mIOU({da_seg_miou:.3f})\n"
     ).format(
         loss=total_loss,
         da_seg_acc=da_segment_results[0],

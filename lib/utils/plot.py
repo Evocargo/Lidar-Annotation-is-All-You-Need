@@ -1,20 +1,42 @@
+from typing import Any, Optional
+
 import cv2
 import numpy as np
+from yacs.config import CfgNode
 
 
 def show_seg_result(
-    img,
-    result,
-    index,
-    epoch,
-    save_dir=None,
-    palette=None,
-    is_demo=False,
-    is_gt=False,
-    config=None,
-    clearml_logger=None,
-    prefix="",
-):
+    img: np.ndarray,
+    result: np.ndarray,
+    index: int,
+    epoch: int,
+    save_dir: Optional[str] = None,
+    palette: Optional[np.ndarray] = None,
+    is_demo: bool = False,
+    is_gt: bool = False,
+    config: Optional[CfgNode] = None,
+    clearml_logger: Optional[Any] = None,
+    prefix: str = "",
+) -> np.ndarray:
+    """
+    Overlay segmentation results on the image and save or log the visualization.
+
+    Args:
+        img: The original image as a numpy array.
+        result: Segmentation results as a numpy array.
+        index: Index of the batch or image.
+        epoch: Current epoch number for logging purposes.
+        save_dir: Directory path where the image will be saved.
+        palette: Color palette for segmentation classes.
+        is_demo: Flag indicating if this is a demo (changes visualization style).
+        is_gt: Flag indicating if the result is ground truth segmentation.
+        config: Configuration object containing parameters for saving and logging.
+        clearml_logger: Logger for the ClearML platform.
+        prefix: Prefix string for the saved or logged image file name.
+
+    Returns:
+        The image with segmentation results overlaid as a numpy array.
+    """
 
     if palette is None:
         palette = np.random.randint(0, 255, size=(3, 3))
@@ -45,9 +67,7 @@ def show_seg_result(
     if not is_demo:
         if not is_gt:
             if config.TRAIN.SAVE_LOCALLY_PER_BATCH:
-                cv2.imwrite(
-                    save_dir + f"/{prefix}batch_{epoch}_{index}_da_segresult.jpg", img
-                )
+                cv2.imwrite(save_dir + f"/{prefix}batch_{epoch}_{index}_da_segresult.jpg", img)
             if config.CLEARML_LOGGING:
                 clearml_logger.current_logger().report_image(
                     "image",
@@ -57,9 +77,7 @@ def show_seg_result(
                 )
         else:
             if config.TRAIN.SAVE_LOCALLY_PER_BATCH:
-                cv2.imwrite(
-                    save_dir + f"/{prefix}batch_{epoch}_{index}_da_seg_gt.jpg", img
-                )
+                cv2.imwrite(save_dir + f"/{prefix}batch_{epoch}_{index}_da_seg_gt.jpg", img)
             if config.CLEARML_LOGGING:
                 clearml_logger.current_logger().report_image(
                     "image",
@@ -67,4 +85,5 @@ def show_seg_result(
                     iteration=epoch,
                     image=cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
                 )
+
     return img

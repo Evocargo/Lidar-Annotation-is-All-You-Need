@@ -15,14 +15,14 @@ repos:
     rev: 21.12b0
     hooks:
       - id: black
-        args: [-l 90]
+        args: [-l 120]
         additional_dependencies: ["click==8.0.4"]
 
   - repo: https://github.com/timothycrosley/isort
     rev: 5.12.0
     hooks:
       - id: isort
-        args: [--profile, black, -l, "90", --lines-after-imports, "2"]
+        args: [--profile, black, -l, "120", --lines-after-imports, "2"]
 
   - repo: https://git.evocargo.org/thirdparty/flake8
     rev: 3.9.2
@@ -30,7 +30,7 @@ repos:
       - id: flake8
         name: flake8 (py3)
         args:
-          [--max-line-length=90, "--ignore=E203,E231,W503,E266,B301,B028,E402"]
+          [--max-line-length=120, "--ignore=E203,E231,W503,E266,B301,B028,E402"]
         additional_dependencies: [flake8-bugbear]
         language_version: python3
 
