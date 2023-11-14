@@ -1,7 +1,8 @@
-import numpy as np
-import cv2
-import random
 import math
+import random
+
+import cv2
+import numpy as np
 
 
 def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
@@ -15,10 +16,22 @@ def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
     lut_sat = np.clip(x * r[1], 0, 255).astype(dtype)
     lut_val = np.clip(x * r[2], 0, 255).astype(dtype)
 
-    img_hsv = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val))).astype(dtype)
+    img_hsv = cv2.merge(
+        (cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val))
+    ).astype(dtype)
     cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR, dst=img)  # no return needed
 
-def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0, border=(0, 0)):
+
+def random_perspective(
+    combination,
+    targets=(),
+    degrees=10,
+    translate=0.1,
+    scale=0.1,
+    shear=10,
+    perspective=0.0,
+    border=(0, 0),
+):
     """combination of img transform"""
     img, gray, line = combination
     height = img.shape[0] + border[0] * 2  # shape(h,w,c)
@@ -37,7 +50,9 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
     # Rotation and Scale
     R = np.eye(3)
     a = random.uniform(-degrees, degrees)
-    s = random.uniform(1 - (scale * 0.5), 1 + scale) # CHANGED this to get more zoomed images TO FIX
+    s = random.uniform(
+        1 - (scale * 0.5), 1 + scale
+    )  # CHANGED this to get more zoomed images TO FIX
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
 
     # Shear
@@ -47,20 +62,30 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
 
     # Translation
     T = np.eye(3)
-    T[0, 2] = random.uniform(0.5 - translate, 0.5 + translate) * width  # x translation (pixels)
-    T[1, 2] = random.uniform(0.5 - translate, 0.5 + translate) * height  # y translation (pixels)
+    T[0, 2] = (
+        random.uniform(0.5 - translate, 0.5 + translate) * width
+    )  # x translation (pixels)
+    T[1, 2] = (
+        random.uniform(0.5 - translate, 0.5 + translate) * height
+    )  # y translation (pixels)
 
     # Combined rotation matrix
     M = T @ S @ R @ P @ C  # order of operations (right to left) is IMPORTANT
     if (border[0] != 0) or (border[1] != 0) or (M != np.eye(3)).any():  # image changed
         if perspective:
-            img = cv2.warpPerspective(img, M, dsize=(width, height), borderValue=(114, 114, 114))
+            img = cv2.warpPerspective(
+                img, M, dsize=(width, height), borderValue=(114, 114, 114)
+            )
             gray = cv2.warpPerspective(gray, M, dsize=(width, height), borderValue=0)
             line = cv2.warpPerspective(line, M, dsize=(width, height), borderValue=0)
         else:  # affine
-            img = cv2.warpAffine(img, M[:2], dsize=(width, height), borderValue=(114, 114, 114))
+            img = cv2.warpAffine(
+                img, M[:2], dsize=(width, height), borderValue=(114, 114, 114)
+            )
             # interpolation flag here to more precise transform for points on image
-            gray = cv2.warpAffine(gray, M[:2], dsize=(width, height), borderValue=0, flags=cv2.INTER_NEAREST) # or INTER_LANCZOS4
+            gray = cv2.warpAffine(
+                gray, M[:2], dsize=(width, height), borderValue=0, flags=cv2.INTER_NEAREST
+            )  # or INTER_LANCZOS4
             line = cv2.warpAffine(line, M[:2], dsize=(width, height), borderValue=0)
 
     # Transform label coordinates
@@ -68,7 +93,9 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
     if n:
         # warp points
         xy = np.ones((n * 4, 3))
-        xy[:, :2] = targets[:, [1, 2, 3, 4, 1, 4, 3, 2]].reshape(n * 4, 2)  # x1y1, x2y2, x1y2, x2y1
+        xy[:, :2] = targets[:, [1, 2, 3, 4, 1, 4, 3, 2]].reshape(
+            n * 4, 2
+        )  # x1y1, x2y2, x1y2, x2y1
         xy = xy @ M.T  # transform
         if perspective:
             xy = (xy[:, :2] / xy[:, 2:3]).reshape(n, 8)  # rescale
@@ -92,8 +119,17 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
     combination = (img, gray, line)
     return combination, targets
 
-def letterbox(combination, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
-    """Resize the input image and automatically padding to suitable shape :https://zhuanlan.zhihu.com/p/172121380"""
+
+def letterbox(
+    combination,
+    new_shape=(640, 640),
+    color=(114, 114, 114),
+    auto=True,
+    scaleFill=False,
+    scaleup=True,
+):
+    """Resize the input image and automatically padding to suitable shape:
+    https://zhuanlan.zhihu.com/p/172121380"""
     img, gray, line = combination
     shape = img.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
@@ -126,15 +162,30 @@ def letterbox(combination, new_shape=(640, 640), color=(114, 114, 114), auto=Tru
     top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
     left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
 
-    img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
-    gray = cv2.copyMakeBorder(gray, top, bottom, left, right, cv2.BORDER_CONSTANT, value=0)  # add border
-    line = cv2.copyMakeBorder(line, top, bottom, left, right, cv2.BORDER_CONSTANT, value=0)  # add border
+    img = cv2.copyMakeBorder(
+        img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color
+    )  # add border
+    gray = cv2.copyMakeBorder(
+        gray, top, bottom, left, right, cv2.BORDER_CONSTANT, value=0
+    )  # add border
+    line = cv2.copyMakeBorder(
+        line, top, bottom, left, right, cv2.BORDER_CONSTANT, value=0
+    )  # add border
 
     combination = (img, gray, line)
     return combination, ratio, (dw, dh)
 
-def letterbox_for_img(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
-    # Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232
+
+def letterbox_for_img(
+    img,
+    new_shape=(640, 640),
+    color=(114, 114, 114),
+    auto=True,
+    scaleFill=False,
+    scaleup=True,
+):
+    # Resize image to a 32-pixel-multiple rectangle
+    # https://github.com/ultralytics/yolov3/issues/232
     shape = img.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
         new_shape = (new_shape, new_shape)
@@ -147,7 +198,6 @@ def letterbox_for_img(img, new_shape=(640, 640), color=(114, 114, 114), auto=Tru
     # Compute padding
     ratio = r, r  # width, height ratios
     new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
-
 
     dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
 
@@ -166,12 +216,23 @@ def letterbox_for_img(img, new_shape=(640, 640), color=(114, 114, 114), auto=Tru
 
     top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
     left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
-    img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
+    img = cv2.copyMakeBorder(
+        img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color
+    )  # add border
     return img, ratio, (dw, dh)
 
-def _box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1):  # box1(4,n), box2(4,n)
-    # Compute candidate boxes: box1 before augment, box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
+
+def _box_candidates(
+    box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1
+):  # box1(4,n), box2(4,n)
+    # Compute candidate boxes: box1 before augment,
+    # box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
     w1, h1 = box1[2] - box1[0], box1[3] - box1[1]
     w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
     ar = np.maximum(w2 / (h2 + 1e-16), h2 / (w2 + 1e-16))  # aspect ratio
-    return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + 1e-16) > area_thr) & (ar < ar_thr)  # candidates
+    return (
+        (w2 > wh_thr)
+        & (h2 > wh_thr)
+        & (w2 * h2 / (w1 * h1 + 1e-16) > area_thr)
+        & (ar < ar_thr)
+    )  # candidates

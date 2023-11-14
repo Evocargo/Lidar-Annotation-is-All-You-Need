@@ -1,10 +1,12 @@
-import torch.nn as nn
 import torch
+import torch.nn as nn
+
 
 class MaskedLoss(nn.Module):
     """
     Collect all the loss we need
     """
+
     def __init__(self, loss, cfg, lambda_val=1.0):
         """
         Inputs:
@@ -13,7 +15,7 @@ class MaskedLoss(nn.Module):
             lambdas: (list) + IoU loss, weight for each loss
         """
         super().__init__()
-        
+
         self.loss = loss
         self.lambda_val = lambda_val
         self.cfg = cfg
@@ -48,11 +50,11 @@ class MaskedLoss(nn.Module):
         drive_area_seg_predicts = predictions.view(-1)
         drive_area_seg_targets = targets[1].view(-1)
         if self.cfg.LOSS.MASKED:
-            mask = targets[2].view(-1).clone() # mask of points
+            mask = targets[2].view(-1).clone()  # mask of points
             bool_mask = torch.gt(mask, 0)
             drive_area_seg_predicts = drive_area_seg_predicts[bool_mask]
             drive_area_seg_targets = drive_area_seg_targets[bool_mask]
-        
+
         lseg_da = BCEseg(drive_area_seg_predicts, drive_area_seg_targets)
         lseg_da *= cfg.LOSS.DA_SEG_GAIN * self.lambda_val
         return lseg_da
@@ -71,6 +73,8 @@ def get_loss(cfg, device):
 
     """
     # segmentation loss criteria
-    BCEseg = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([cfg.LOSS.SEG_POS_WEIGHT])).to(device)
+    BCEseg = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([cfg.LOSS.SEG_POS_WEIGHT])).to(
+        device
+    )
     loss = MaskedLoss(BCEseg, cfg=cfg, lambda_val=cfg.LOSS.LAMBDA)
     return loss
