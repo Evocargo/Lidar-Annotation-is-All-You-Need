@@ -189,3 +189,4 @@ Project is distributed under the
 - [YOLOP](https://github.com/hustvl/YOLOP)
 - [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch)
 - [Waymo Open Dataset](https://github.com/waymo-research/waymo-open-dataset)
+- [KITTI-360](https://www.cvlibs.net/datasets/kitti-360/)
