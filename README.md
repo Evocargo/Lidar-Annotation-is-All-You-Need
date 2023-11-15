@@ -47,6 +47,7 @@ _Lidar-based road ground truth for three setups placed from top to bottom: Waymo
 Open Dataset (five proprietary lidar sensors), KITTI-360 (Velodyne HDL-64E
 lidar), Proprietary dataset (two Robosense RS-Helios lidars)._
 
+#### Waymo
 You can download the filtered Waymo dataset (Waymo with intersection in the
 paper) from
 [the link](https://drive.google.com/file/d/1TAtAqf6xSmsp_IMqfKHTg4kchacuPXuk/view?usp=sharing).
@@ -77,6 +78,19 @@ _Note: val subset needs both lidar data and 2D masks, don't override flags
 --lidar_data_only and --masks_only when generating val subset_
 
 For "Waymo with intersection" you should get 1852 images in the train set and 315 images in the val set with both 2D masks of road and reprojected points for road and other classes.
+
+#### KITTI-360
+We cannot provide filtered KITTI-360 dataset for this task due to its size. But you can get it easily by yourself.
+
+Firstly download original KITTI-360 dataset from here:
+
+https://www.cvlibs.net/datasets/kitti-360/
+
+To process KITTI-360 to our data format you have to use following repositories:
+1) https://github.com/autonomousvision/kitti360Scripts - official KITTI-360 repo for working with the dataset
+2) https://github.com/JulesSanchez/recoverKITTI360label - unofficial KITTI-360 to recover lidar labels from 
+
+Using this 2 tools you can get all needed labels and images.
 
 ### Docker
 
