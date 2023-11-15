@@ -80,7 +80,7 @@ _Note: val subset needs both lidar data and 2D masks, don't override flags
 For "Waymo with intersection" you should get 1852 images in the train set and 315 images in the val set with both 2D masks of road and reprojected points for road and other classes.
 
 #### KITTI-360
-We cannot provide filtered KITTI-360 dataset for this task due to its size. But you can get it easily by yourself.
+We cannot provide filtered KITTI-360 dataset due to its size. But you can get it easily by yourself.
 
 Firstly download original KITTI-360 dataset from here:
 
@@ -155,6 +155,29 @@ python scripts/test.py --weights {path to the .pth weights} --save_video
 Unfortunately, publishing the weights of a model trained with the use of the
 Waymo open dataset is prohibited by the dataset license. But the training
 experiments can be easily reproduced using our repository and the data provided.
+
+## Contribution
+Before contributing to this repository, we ask that you set up pre-commit hooks on your 
+local machine. This ensures that your submissions adhere to our code quality standards and 
+formatting guidelines.
+
+1. Install the pre-commit package using pip:
+
+```bash
+pip install pre-commit
+```
+2. Navigate to the root directory of this repository.
+
+3. Install the pre-commit hook scripts into your .git/ directory:
+
+```bash
+pre-commit install
+```
+If you want to manually run the hooks on all files in the repository, you can do so with 
+the following command:
+```bash
+pre-commit run --all-files
+```
 
 ## License
 
