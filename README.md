@@ -2,7 +2,10 @@
 
 ![scheme](pictures/scheme.png)
 
-We propose a novel approach that effectively leverages lidar annotations to train image segmentation models directly on RGB images. The approach consists of four main parts: point cloud road annotation, data preparation, masked loss, and the segmentation model itself. The Masked loss allows training the model using projected lidar points. The flexibility of the approach allows mixing lidar data with 2D ground truth, and by doing that, increasing the quality of predictions.
+We propose a novel approach that effectively leverages lidar annotations to train image segmentation models directly on RGB images. The approach consists of four main parts: point cloud road annotation, data preparation, masked loss, and the segmentation model itself. The key innovation
+of our approach is the masked loss, addressing sparse ground-truth masks from lidar point clouds. By
+calculating loss exclusively where lidar points exist, the model learns road segmentation on images by
+using lidar points as ground truth. The flexibility of the approach allows mixing lidar data with 2D ground truth, and by doing that, increasing the quality of predictions.
 
 You can find a detailed description of our approach in the [paper](https://arxiv.org/abs/2311.04777). If you find our work useful for your research, please consider giving it a star
 ⭐ and citing the paper:
