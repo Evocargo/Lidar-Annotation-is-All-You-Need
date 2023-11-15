@@ -45,7 +45,7 @@ You should get 1852 images in the train set and 315 images in the val set with b
 
 ### Docker
 
-Build a contatiner:
+Build a container:
 
 ```shell
 DOCKER_BUILDKIT=1 docker build --network host -t lidar_segm --target base_image --build-arg UID=1000 --build-arg GID=1000 --build-arg USERNAME={your username} .
