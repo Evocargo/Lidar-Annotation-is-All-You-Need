@@ -88,10 +88,10 @@ def main():
 
     print("MODEL")
     model = smp.PSPNet(
-        encoder_name="resnet34",  # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
-        encoder_weights="imagenet",  # use `imagenet` pre-trained weights for encoder init
-        in_channels=3,  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
-        classes=2,  # model output channels (number of classes in your dataset)
+        encoder_name="resnet34",
+        encoder_weights="imagenet",
+        in_channels=3,
+        classes=2,
         activation="sigmoid",
     ).cuda()
     if args.load_from:

@@ -233,9 +233,6 @@ class AutoDriveDataset2D(Dataset):
             label_seg.append(l_seg)
             label_points.append(l_points)
 
-        return (
-            torch.stack(img, 0),
-            [torch.cat(label_det, 0), torch.stack(label_seg, 0), torch.stack(label_points, 0)],
-            paths,
-            shapes,
-        )
+        label_list = [torch.cat(label_det, 0), torch.stack(label_seg, 0), torch.stack(label_points, 0)]
+
+        return torch.stack(img, 0), label_list, paths, shapes

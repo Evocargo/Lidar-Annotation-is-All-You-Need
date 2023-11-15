@@ -67,4 +67,4 @@ class SegmDataset2D(AutoDriveDataset2D):
         Returns:
             The file path of the mask associated with the given index.
         """
-        return str(self.mask_list[idx])
+        return self.mask_list[idx]
