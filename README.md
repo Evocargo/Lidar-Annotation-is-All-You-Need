@@ -88,7 +88,7 @@ https://www.cvlibs.net/datasets/kitti-360/
 
 To process KITTI-360 to our data format you have to use following repositories:
 1) https://github.com/autonomousvision/kitti360Scripts - official KITTI-360 repo for working with the dataset
-2) https://github.com/JulesSanchez/recoverKITTI360label - unofficial KITTI-360 to recover lidar labels from 
+2) https://github.com/JulesSanchez/recoverKITTI360label - unofficial KITTI-360 to recover instant lidar labels from 
 
 Using this 2 tools you can get all needed labels and images.
 
