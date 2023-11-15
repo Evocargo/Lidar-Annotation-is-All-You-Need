@@ -2,6 +2,22 @@
 
 ![scheme](pictures/scheme.png)
 
+We propose a novel approach that effectively leverages lidar annotations to train image segmentation models directly on RGB images. The approach consists of four main parts: point cloud road annotation, data preparation, masked loss, and the segmentation model itself. The Masked loss allows training the model using projected lidar points. The flexibility of the approach allows mixing lidar data with 2D ground truth, and by doing that, increasing the quality of predictions.
+
+You can find a detailed description of our approach in the [paper](https://arxiv.org/abs/2311.04777). If you find our work useful for your research, please consider giving it a star
+⭐ and citing the paper:
+
+```
+@misc{sharafutdinov2023lidar,
+      title={Lidar Annotation Is All You Need},
+      author={Dinar Sharafutdinov and Stanislav Kuskov and Saian Protasov and Alexey Voropaev},
+      year={2023},
+      eprint={2311.04777},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+```
+
 ## Results
 
 ![predictions_waymo](pictures/predictions_waymo.png)
@@ -37,11 +53,9 @@ Or filter the full dataset using our script:
 Download the training and validation folders of
 [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset) (we
 used the
-[1.4.0 version](<https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false>)).
+[1.4.0 version](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false)).
 2D segmentation ground truth and point cloud segmentation ground truth are made
-separately and not for all images. For the paper, we created a dataset from all
-images, for which annotations are intersected. To filter and save the dataset,
-use these commands:
+separately and not for all images. We created two datasets for the paper: "Waymo with intersection" and "Waymo full". The first one is a dataset created from all original images, for which 2D and lidar annotations are intersected. The second one is created separately for 2D and lidar annotations and then combined together. To filter and save the dataset, use these commands:
 
 ```shell
 pip install -r lib/waymo_process/requirments.txt
@@ -59,8 +73,7 @@ python3 lib/waymo_process/create_2d3d_dataset.py {path_to_training_or_validation
 _Note: val subset needs both lidar data and 2D masks, don't override flags
 --lidar_data_only and --masks_only when generating val subset_
 
-You should get 1852 images in the train set and 315 images in the val set with
-both 2D masks of road and reprojected points for road and other classes.
+For "Waymo with intersection" you should get 1852 images in the train set and 315 images in the val set with both 2D masks of road and reprojected points for road and other classes.
 
 ### Docker
 
@@ -125,22 +138,6 @@ python scripts/test.py --weights {path to the .pth weights} --save_video
 Unfortunately, publishing the weights of a model trained with the use of the
 Waymo open dataset is prohibited by the dataset license. But the training
 experiments can be easily reproduced using our repository and the data provided.
-
-## Citation
-
-If you find our work useful for your research, please consider giving it a star
-⭐ and citing the paper:
-
-```
-@misc{sharafutdinov2023lidar,
-      title={Lidar Annotation Is All You Need},
-      author={Dinar Sharafutdinov and Stanislav Kuskov and Saian Protasov and Alexey Voropaev},
-      year={2023},
-      eprint={2311.04777},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
-}
-```
 
 ## License
 
