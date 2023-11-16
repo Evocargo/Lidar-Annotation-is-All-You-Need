@@ -84,7 +84,12 @@ def save_2d_road_segm_from_frame(
 
     folder_to_save_seg_mask = folder / "seg_masks" / subset
     folder_to_save_seg_mask.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite((folder_to_save_seg_mask / f'{filename.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.png').as_posix(), segmap * 255)  # noqa: E501
+    cv2.imwrite(
+        (
+            folder_to_save_seg_mask / f'{filename.name}_{"0" * (5 - len(str(frame_number)))}{frame_number}.png'
+        ).as_posix(),
+        segmap * 255,
+    )  # noqa: E501
     if verbose:
         print("2d seg mask is saved")
 

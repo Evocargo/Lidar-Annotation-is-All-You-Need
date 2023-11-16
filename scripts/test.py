@@ -103,10 +103,15 @@ def main():
     da_segment_results, total_loss = validate(
         epoch, cfg, valid_loader, model, criterion, final_output_dir, device=device
     )
-    msg = 'Test:    Loss({loss:.3f})\n' \
-          'Driving area Segment: Acc({da_seg_acc:.3f})    IOU ({da_seg_iou:.3f})    mIOU({da_seg_miou:.3f})\n'.format(
-        loss=total_loss, da_seg_acc=da_segment_results[0],
-        da_seg_iou=da_segment_results[1], da_seg_miou=da_segment_results[2], )
+    msg = (
+        "Test:    Loss({loss:.3f})\n"
+        "Driving area Segment: Acc({da_seg_acc:.3f})    IOU ({da_seg_iou:.3f})    mIOU({da_seg_miou:.3f})\n".format(
+            loss=total_loss,
+            da_seg_acc=da_segment_results[0],
+            da_seg_iou=da_segment_results[1],
+            da_seg_miou=da_segment_results[2],
+        )
+    )
     logger.info(msg)
     print("Test finish")
 

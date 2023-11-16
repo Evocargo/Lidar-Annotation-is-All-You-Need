@@ -68,10 +68,10 @@ dataset
 ├── seg_masks # a folder with 2D segmentation ground truth masks
 │   ├── train
 │   └── val
-├── seg_points # a folder with lidar road points that were reprojected to the 2D mask
+├── seg_points # a folder with lidar road points that were projected to the 2D mask
 │   ├── train
 │   └── val
-└── seg_points_total # a folder with all lidar points that were reprojected to the 2D mask
+└── seg_points_total # a folder with all lidar points that were projected to the 2D mask
     ├── train
     └── val
 ```
