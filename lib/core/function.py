@@ -32,7 +32,7 @@ def train(
     clearml_logger: Optional[Any] = None,
 ) -> None:
     """
-    Run one training epoch.
+    Runs one training epoch.
 
     Args:
         config: Configuration object with parameters and hyperparameters.
@@ -183,7 +183,7 @@ def validate(
     half: bool = False,
 ) -> Tuple[Tuple[float, float, float], float]:
     """
-    Validate the model on the validation dataset.
+    Validates the model on the validation dataset.
 
     Args:
         epoch: Current epoch of training.

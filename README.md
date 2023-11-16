@@ -2,13 +2,22 @@
 
 ![scheme](pictures/scheme.png)
 
-We propose a novel approach that effectively leverages lidar annotations to train image segmentation models directly on RGB images. The approach consists of four main parts: point cloud road annotation, data preparation, masked loss, and the segmentation model itself. The key innovation
-of our approach is the masked loss, addressing sparse ground-truth masks from lidar point clouds. By
-calculating loss exclusively where lidar points exist, the model learns road segmentation on images by
-using lidar points as ground truth. The flexibility of the approach allows mixing lidar data with 2D ground truth, and by doing that, increasing the quality of predictions.
+We propose a novel approach that effectively leverages lidar annotations to
+train image segmentation models directly on RGB images. The approach consists of
+four main parts: point cloud road annotation, data preparation, masked loss, and
+the segmentation model itself. The key innovation of our approach is the masked
+loss, addressing sparse ground-truth masks from lidar point clouds. By
+calculating loss exclusively where lidar points exist, the model learns road
+segmentation on images by using lidar points as ground truth. The flexibility of
+the approach allows mixing lidar data with 2D ground truth, and by doing that,
+increasing the quality of predictions.
 
-You can find a detailed description of our approach in the [paper](https://arxiv.org/abs/2311.04777). If you find our work useful for your research, please consider giving it a star
-⭐ and citing the paper:
+[Lidar Annotation Is All You Need](https://arxiv.org/abs/2311.04777) <br />
+Dinar Sharafutdinov, Stanislav Kuskov, Saian Protasov, Alexey Voropaev
+
+You can find a detailed description of our approach in the paper. If you find
+our work useful for your research, please consider giving it a star ⭐ and
+citing the paper:
 
 ```
 @misc{sharafutdinov2023lidar,
@@ -47,7 +56,28 @@ _Lidar-based road ground truth for three setups placed from top to bottom: Waymo
 Open Dataset (five proprietary lidar sensors), KITTI-360 (Velodyne HDL-64E
 lidar), Proprietary dataset (two Robosense RS-Helios lidars)._
 
+#### Datasets structure
+
+Datasets should be formatted in the following structure:
+
+```bash
+dataset
+├── images # a folder with images
+│   ├── train
+│   └── val
+├── seg_masks # a folder with 2D segmentation ground truth masks
+│   ├── train
+│   └── val
+├── seg_points # a folder with lidar road points that were reprojected to the 2D mask
+│   ├── train
+│   └── val
+└── seg_points_total # a folder with all lidar points that were reprojected to the 2D mask
+    ├── train
+    └── val
+```
+
 #### Waymo
+
 You can download the filtered Waymo dataset (Waymo with intersection in the
 paper) from
 [the link](https://drive.google.com/file/d/1TAtAqf6xSmsp_IMqfKHTg4kchacuPXuk/view?usp=sharing).
@@ -57,9 +87,13 @@ Or filter the full dataset using our script:
 Download the training and validation folders of
 [waymo-open-dataset](https://github.com/waymo-research/waymo-open-dataset) (we
 used the
-[1.4.0 version](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false)).
+[1.4.0 version](<https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_4_0/individual_files?pageState=(%22StorageObjectListTable%22:(%22f%22:%22%255B%255D%22))&prefix=&forceOnObjectsSortingFiltering=false>)).
 2D segmentation ground truth and point cloud segmentation ground truth are made
-separately and not for all images. We created two datasets for the paper: "Waymo with intersection" and "Waymo full". The first one is a dataset created from all original images, for which 2D and lidar annotations are intersected. The second one is created separately for 2D and lidar annotations and then combined together. To filter and save the dataset, use these commands:
+separately and not for all images. We created two datasets for the paper: "Waymo
+with intersection" and "Waymo full". The first one is a dataset created from all
+original images, for which 2D and lidar annotations are intersected. The second
+one is created separately for 2D and lidar annotations and then combined
+together. To filter and save the dataset, use these commands:
 
 ```shell
 pip install -r lib/waymo_process/requirments.txt
@@ -77,20 +111,25 @@ python3 lib/waymo_process/create_2d3d_dataset.py {path_to_training_or_validation
 _Note: val subset needs both lidar data and 2D masks, don't override flags
 --lidar_data_only and --masks_only when generating val subset_
 
-For "Waymo with intersection" you should get 1852 images in the train set and 315 images in the val set with both 2D masks of road and reprojected points for road and other classes.
+For "Waymo with intersection" you should get 1852 images in the train set and
+315 images in the val set with both 2D masks of road and reprojected points for
+road and other classes.
 
 #### KITTI-360
-We cannot provide filtered KITTI-360 dataset due to its size. But you can get it easily by yourself.
 
-Firstly download original KITTI-360 dataset from here:
+We cannot provide a filtered KITTI-360 dataset due to its size. But you can get
+it easily by yourself.
 
-https://www.cvlibs.net/datasets/kitti-360/
+Firstly, download the original KITTI-360 dataset from
+[the official website](https://www.cvlibs.net/datasets/kitti-360/). To process
+KITTI-360 to our data format, you have to use the following repositories:
 
-To process KITTI-360 to our data format you have to use following repositories:
-1) https://github.com/autonomousvision/kitti360Scripts - official KITTI-360 repo for working with the dataset
-2) https://github.com/JulesSanchez/recoverKITTI360label - unofficial KITTI-360 to recover instant lidar labels from 
+1. https://github.com/autonomousvision/kitti360Scripts - official KITTI-360 repo
+   for working with the dataset
+2. https://github.com/JulesSanchez/recoverKITTI360label - unofficial KITTI-360
+   to recover instant lidar labels from
 
-Using this 2 tools you can get all needed labels and images.
+Using this two tools you can get all the needed labels and images.
 
 ### Docker
 
@@ -157,24 +196,27 @@ Waymo open dataset is prohibited by the dataset license. But the training
 experiments can be easily reproduced using our repository and the data provided.
 
 ## Contribution
-Before contributing to this repository, we ask that you set up pre-commit hooks on your 
-local machine. This ensures that your submissions adhere to our code quality standards and 
-formatting guidelines.
+
+Before contributing to this repository, we ask that you set up pre-commit hooks
+on your local machine. This ensures that your submissions adhere to our code
+quality standards and formatting guidelines.
 
 1. Install the pre-commit package using pip:
 
 ```bash
 pip install pre-commit
 ```
-2. Navigate to the root directory of this repository.
 
+2. Navigate to the root directory of this repository.
 3. Install the pre-commit hook scripts into your .git/ directory:
 
 ```bash
 pre-commit install
 ```
-If you want to manually run the hooks on all files in the repository, you can do so with 
-the following command:
+
+If you want to manually run the hooks on all files in the repository, you can do
+so with the following command:
+
 ```bash
 pre-commit run --all-files
 ```
