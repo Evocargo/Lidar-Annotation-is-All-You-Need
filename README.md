@@ -62,16 +62,16 @@ Datasets should be formatted in the following structure:
 
 ```bash
 dataset
-├── images # a folder with images
+├── images # a folder with images (.jpg)
 │   ├── train
 │   └── val
-├── seg_masks # a folder with 2D segmentation ground truth masks
+├── seg_masks # a folder with 2D segmentation ground truth masks (.png)
 │   ├── train
 │   └── val
-├── seg_points # a folder with lidar road points that were projected to the 2D mask
+├── seg_points # a folder with lidar road points that were projected to the 2D mask (.npy)
 │   ├── train
 │   └── val
-└── seg_points_total # a folder with all lidar points that were projected to the 2D mask
+└── seg_points_total # a folder with all lidar points that were projected to the 2D mask (.npy)
     ├── train
     └── val
 ```

@@ -13,7 +13,7 @@ class MaskedLoss(nn.Module):
 
     def __init__(self, loss: nn.Module, cfg: CfgNode, lambda_val: float = 1.0):
         """
-        Initialize the MaskedLoss module.
+        Initializes the MaskedLoss module.
 
         Args:
             loss: The loss function to be masked.
@@ -69,7 +69,7 @@ class MaskedLoss(nn.Module):
 
 def get_loss(cfg: CfgNode, device: torch.device) -> MaskedLoss:
     """
-    Construct and return the MaskedLoss module.
+    Constructs and returns the MaskedLoss module.
 
     Args:
         cfg: Configuration object with various settings, including the loss configuration.

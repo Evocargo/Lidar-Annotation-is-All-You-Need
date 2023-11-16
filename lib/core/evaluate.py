@@ -19,7 +19,7 @@ class SegmentationMetric:
 
     def pixel_accuracy(self) -> float:
         """
-        Calculate the pixel accuracy across all classes.
+        Calculates the pixel accuracy across all classes.
 
         Returns:
             float: Overall pixel accuracy.
@@ -30,7 +30,7 @@ class SegmentationMetric:
 
     def class_pixel_accuracy(self) -> np.ndarray:
         """
-        Calculate the pixel accuracy for each class individually.
+        Calculates the pixel accuracy for each class individually.
 
         Returns:
             np.ndarray: Array containing pixel accuracy for each class.
@@ -51,7 +51,7 @@ class SegmentationMetric:
 
     def mean_intersection_over_union(self) -> float:
         """
-        Calculate the mean Intersection over Union (IoU) across all classes.
+        Calculates the mean Intersection over Union (IoU) across all classes.
 
         Returns:
             float: Mean IoU.
@@ -71,7 +71,7 @@ class SegmentationMetric:
 
     def intersection_over_union(self) -> float:
         """
-        Calculate the Intersection over Union (IoU) for the second class.
+        Calculates the Intersection over Union (IoU) for the second class.
 
         Returns:
             float: IoU for the second class.
@@ -88,7 +88,7 @@ class SegmentationMetric:
 
     def gen_confusion_matrix(self, img_predict, img_label):
         """
-        Generate the confusion matrix for a batch of predictions and labels.
+        Generates the confusion matrix for a batch of predictions and labels.
 
         Args:
             img_predict (np.ndarray): Array of predicted labels.
@@ -107,7 +107,7 @@ class SegmentationMetric:
 
     def frequency_weighted_intersection_over_union(self) -> float:
         """
-        Calculate the frequency-weighted Intersection over Union (FWIoU).
+        Calculates the frequency-weighted Intersection over Union (FWIoU).
 
         Returns:
             float: Frequency-weighted IoU.
@@ -125,7 +125,7 @@ class SegmentationMetric:
 
     def add_batch(self, img_predict: np.ndarray, img_label: np.ndarray) -> None:
         """
-        Add a new batch of predictions and labels to the confusion matrix.
+        Adds a new batch of predictions and labels to the confusion matrix.
 
         Args:
              img_predict (np.ndarray): Array of predicted labels.
@@ -136,6 +136,6 @@ class SegmentationMetric:
 
     def reset(self) -> None:
         """
-        Reset the confusion matrix to zeros.
+        Resets the confusion matrix to zeros.
         """
         self.confusion_matrix = np.zeros((self.num_classes, self.num_classes))
