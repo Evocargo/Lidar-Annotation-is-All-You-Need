@@ -1,30 +1,43 @@
+import random
+from pathlib import Path
+from typing import Callable, List, Optional, Tuple, Union
+
 import cv2
 import numpy as np
-import random
 import torch
 import torchvision.transforms as transforms
-from pathlib import Path
 from torch.utils.data import Dataset
+from yacs.config import CfgNode
 
-from ..utils import letterbox, augment_hsv, random_perspective, xyxy2xywh
+from ..utils import augment_hsv, letterbox, random_perspective, xyxy2xywh
 
 
 class AutoDriveDataset2D(Dataset):
-    """
-    A general Dataset for some common function
-    """
-    def __init__(self, cfg, is_train, inputsize=640, transform=None, data_path=None, split=None, 
-                 from_img=None, to_img=None):
-        """
-        initial all the characteristic
+    """A base Dataset class handling 2D segmentation masks."""
 
-        Inputs:
-        -cfg: configurations
-        -is_train(bool): whether train set or not
-        -transform: ToTensor and Normalize
-        
-        Returns:
-        None
+    def __init__(
+        self,
+        cfg: CfgNode,
+        is_train: bool,
+        inputsize: Union[int, List[int]] = 640,
+        transform: Optional[Callable] = None,
+        data_path: Optional[str] = None,
+        split: Optional[str] = None,
+        from_img: Optional[int] = None,
+        to_img: Optional[int] = None,
+    ):
+        """
+        Initialize the dataset with given configuration and path.
+
+        Args:
+            cfg: Configuration object with dataset parameters.
+            is_train (bool): Whether to set the dataset mode as training.
+            inputsize (int, list): The input size for images. Defaults to 640.
+            transform (callable, optional): Transformations to apply to the images.
+            data_path (str, optional): Custom path to dataset images and masks.
+            split (str, optional): The dataset split, e.g., 'train', 'val'.
+            from_img (int, optional): Index to slice the dataset from.
+            to_img (int, optional): Index to slice the dataset to.
         """
         self.cfg = cfg
         self.is_train = is_train
@@ -37,9 +50,9 @@ class AutoDriveDataset2D(Dataset):
             img_root = Path(f"{data_path}/images")
             mask_root = Path(f"{data_path}/seg_masks")
         else:
-            img_root, label_root = Path(cfg.DATASET.DATAROOT), Path(cfg.DATASET.LABELROOT)
-            mask_root, lane_root= Path(cfg.DATASET.MASKROOT), Path(cfg.DATASET.LANEROOT)
-        
+            img_root = Path(cfg.DATASET.DATAROOT)
+            mask_root = Path(cfg.DATASET.MASKROOT)
+
         self.img_root = img_root / split
         self.mask_root = mask_root / split
 
@@ -48,47 +61,40 @@ class AutoDriveDataset2D(Dataset):
         if from_img is not None:
             self.img_list = self.img_list[from_img:to_img]
             self.mask_list = self.mask_list[from_img:to_img]
-        
+
         self.db = []
 
         self.data_format = cfg.DATASET.DATA_FORMAT
-    
+
     def _get_db(self):
-        """
-        finished on children Dataset(for dataset which is not in Bdd100k format, rewrite children Dataset)
+        """Placeholder method for fetching the database.
+
+        Raises:
+            NotImplementedError: If the method is not overridden in a subclass.
         """
         raise NotImplementedError
-    
-    def __len__(self,):
-        """
-        number of objects in the dataset
-        """
+
+    def __len__(self) -> int:
+        """Return the number of objects in the dataset."""
         return len(self.db)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple:
         """
-        Get input and groud-truth from database & add data augmentation on input
+        Get item from dataset at a specific index.
 
-        Inputs:
-        -idx: the index of image in self.db(database)(list)
-        self.db(list) [a,b,c,...]
-        a: (dictionary){'image':, 'information':}
+        Args:
+            idx (int): Index of the data to fetch from the dataset.
 
         Returns:
-        -image: transformed image, first passed the data augmentation in __getitem__ function(type:numpy), then apply self.transform
-        -target: ground truth(det_gt,seg_gt)
-
-        function maybe useful
-        cv2.imread
-        cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
-        cv2.warpAffine
+            A tuple containing the transformed image, the targets (ground truth),
+            the path of the image, and the shapes for resizing during evaluation.
         """
         data = self.db[idx]
         img = cv2.imread(data["image"], cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        
-        seg_label = cv2.imread(data["mask"]) 
-        total_points_label = np.zeros(img.shape[:2]) # empty
+
+        seg_label = cv2.imread(data["mask"])
+        total_points_label = np.zeros(img.shape[:2])  # empty
 
         resized_shape = self.inputsize
         if isinstance(resized_shape, list):
@@ -101,15 +107,18 @@ class AutoDriveDataset2D(Dataset):
             seg_label = cv2.resize(seg_label, (int(w0 * r), int(h0 * r)), interpolation=interp)
             total_points_label = cv2.resize(total_points_label, (int(w0 * r), int(h0 * r)), interpolation=interp)
         h, w = img.shape[:2]
-        
-        (img, seg_label, total_points_label), ratio, pad = letterbox((img, seg_label, total_points_label), 
-                                                                     resized_shape, auto=self.cfg.DATASET.AUTO_SHAPE,
-                                                                     scaleup=self.is_train)
-        shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling 
-        
+
+        (img, seg_label, total_points_label), ratio, pad = letterbox(
+            (img, seg_label, total_points_label),
+            resized_shape,
+            auto=self.cfg.DATASET.AUTO_SHAPE,
+            scaleup=self.is_train,
+        )
+        shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling
+
         det_label = data["label"]
         labels = []
-        
+
         if det_label.size > 0:
             # Normalized xywh to pixel xyxy format
             labels = det_label.copy()
@@ -117,7 +126,7 @@ class AutoDriveDataset2D(Dataset):
             labels[:, 2] = ratio[1] * h * (det_label[:, 2] - det_label[:, 4] / 2) + pad[1]  # pad height
             labels[:, 3] = ratio[0] * w * (det_label[:, 1] + det_label[:, 3] / 2) + pad[0]
             labels[:, 4] = ratio[1] * h * (det_label[:, 2] + det_label[:, 4] / 2) + pad[1]
-            
+
         if self.is_train:
             combination = (img, seg_label, total_points_label)
             (img, seg_label, total_points_label), labels = random_perspective(
@@ -126,11 +135,15 @@ class AutoDriveDataset2D(Dataset):
                 degrees=self.cfg.DATASET.ROT_FACTOR,
                 translate=self.cfg.DATASET.TRANSLATE,
                 scale=self.cfg.DATASET.SCALE_FACTOR,
-                shear=self.cfg.DATASET.SHEAR
+                shear=self.cfg.DATASET.SHEAR,
             )
 
-            augment_hsv(img, hgain=self.cfg.DATASET.HSV_H, 
-                        sgain=self.cfg.DATASET.HSV_S, vgain=self.cfg.DATASET.HSV_V)
+            augment_hsv(
+                img,
+                hgain=self.cfg.DATASET.HSV_H,
+                sgain=self.cfg.DATASET.HSV_S,
+                vgain=self.cfg.DATASET.HSV_V,
+            )
 
             if len(labels):
                 # convert xyxy to xywh
@@ -157,7 +170,7 @@ class AutoDriveDataset2D(Dataset):
                 total_points_label = np.filpud(total_points_label)
                 if len(labels):
                     labels[:, 2] = 1 - labels[:, 2]
-        
+
         else:
             if len(labels):
                 # convert xyxy to xywh
@@ -170,7 +183,7 @@ class AutoDriveDataset2D(Dataset):
         labels_out = torch.zeros((len(labels), 6))
         if len(labels):
             labels_out[:, 1:] = torch.from_numpy(labels)
-        
+
         # Convert
         img = np.ascontiguousarray(img)
 
@@ -179,8 +192,8 @@ class AutoDriveDataset2D(Dataset):
         points2 = np.ones(seg_label.shape)
 
         # convert to 0-255 to feed to self.Tensor
-        _, seg1 = cv2.threshold(seg_label, 0, 255, cv2.THRESH_BINARY) # gt road
-        _, seg2 = cv2.threshold(seg_label, 0, 255, cv2.THRESH_BINARY_INV) # inverse
+        _, seg1 = cv2.threshold(seg_label, 0, 255, cv2.THRESH_BINARY)  # gt road
+        _, seg2 = cv2.threshold(seg_label, 0, 255, cv2.THRESH_BINARY_INV)  # inverse
 
         seg1 = self.Tensor(seg1.copy())
         seg2 = self.Tensor(seg2.copy())
@@ -198,8 +211,20 @@ class AutoDriveDataset2D(Dataset):
         return img, target, data["image"], shapes
 
     @staticmethod
-    def collate_fn(batch):
-        img, label, paths, shapes= zip(*batch)
+    def collate_fn(batch: List) -> Tuple:
+        """
+        Custom collate function to combine multiple data samples into a batch.
+
+        Args:
+            batch (list): List of tuples containing images, labels, paths, and shapes.
+
+        Returns:
+            A tuple containing batches of images, labels
+            (detection, segmentation, points), paths of the images,
+            and shapes for resizing.
+        """
+
+        img, label, paths, shapes = zip(*batch)
         label_det, label_seg, label_points = [], [], []
         for i, l in enumerate(label):
             l_det, l_seg, l_points = l
@@ -207,5 +232,7 @@ class AutoDriveDataset2D(Dataset):
             label_det.append(l_det)
             label_seg.append(l_seg)
             label_points.append(l_points)
-        return torch.stack(img, 0), [torch.cat(label_det, 0), torch.stack(label_seg, 0), torch.stack(label_points, 0)], paths, shapes
 
+        label_list = [torch.cat(label_det, 0), torch.stack(label_seg, 0), torch.stack(label_points, 0)]
+
+        return torch.stack(img, 0), label_list, paths, shapes

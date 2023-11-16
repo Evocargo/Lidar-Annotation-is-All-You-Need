@@ -1,40 +1,44 @@
 import argparse
-import os, sys
+import os
+import sys
+
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
 import pprint
+
+# PSPNet
+import ssl
+
 import torch
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
-from lib.utils import DataLoaderX
-from lib.dataset.SegmDataset2D import SegmDataset2D
+
+from lib.config.kitti_360_inference import _C as cfg_kitti
 from lib.config.waymo_inference import _C as cfg_waymo
 from lib.config.waymo_inference import update_config
-from lib.config.kitti_360_inference import _C as cfg_kitti
-from lib.core.loss import get_loss
 from lib.core.function import validate
+from lib.core.loss import get_loss
+from lib.dataset.SegmDataset2D import SegmDataset2D
+from lib.utils import DataLoaderX
 from lib.utils.utils import create_logger
 
-# PSPNet
-import ssl
+
 ssl._create_default_https_context = ssl._create_unverified_context
 import segmentation_models_pytorch as smp
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Test Multitask network')
-    parser.add_argument('--weights', type=str, default='', help='model.pth path')
-    parser.add_argument('--inference_visualization', type=bool, default=False, help='save images with detection and segmentation results')
-    parser.add_argument('--save_video', action='store_true', help='to save video with results')
-    parser.add_argument('--save_gt', type=bool, default=False, help='to visualize gt')
-    parser.add_argument('--dataset_type',
-                        help='waymo or KITTI-360 dataset',
-                        type=str,
-                        default="waymo")
+    parser = argparse.ArgumentParser(description="Test Multitask network")
+    parser.add_argument("--weights", type=str, default="", help="model.pth path")
+    parser.add_argument("--inference_visualization", type=bool, default=False, help="save images with results")
+    parser.add_argument("--save_video", action="store_true", help="to save video with results")
+    parser.add_argument("--save_gt", type=bool, default=False, help="to visualize gt")
+    parser.add_argument("--dataset_type", help="waymo or KITTI-360 dataset", type=str, default="waymo")
     args = parser.parse_args()
     return args
 
@@ -51,41 +55,36 @@ def main():
 
     update_config(cfg, args)
 
-    logger, final_output_dir, _tb_log_dir = create_logger(cfg, cfg.LOG_DIR, 'test')
+    logger, final_output_dir, _tb_log_dir = create_logger(cfg, cfg.LOG_DIR, "test")
     logger.info(pprint.pformat(args))
     logger.info(cfg)
 
-    device = torch.device('cuda:0')
-    
+    device = torch.device("cuda:0")
+
     print("MODEL")
     model = smp.PSPNet(
-        encoder_name="resnet34",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
-        encoder_weights="imagenet",     # use `imagenet` pre-trained weights for encoder initialization
-        in_channels=3,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
-        classes=2,                      # model output channels (number of classes in your dataset)
-        activation='sigmoid',
+        encoder_name="resnet34",
+        encoder_weights="imagenet",
+        in_channels=3,
+        classes=2,
+        activation="sigmoid",
     ).to(device)
     print(f"Loading weights: {cfg.MODEL.WEIGHTS}")
     checkpoint = torch.load(cfg.MODEL.WEIGHTS)
-    model.load_state_dict(checkpoint['state_dict'])
-    print('Bulid model finished')
-    
+    model.load_state_dict(checkpoint["state_dict"])
+    print("Bulid model finished")
+
     # define loss function (criterion) and optimizer
     criterion = get_loss(cfg, device=device)
 
     print("DATA LOAD")
-    normalize = transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     valid_dataset = SegmDataset2D(
         cfg=cfg,
         is_train=False,
         inputsize=cfg.MODEL.IMAGE_SIZE,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            normalize,
-        ]),
+        transform=transforms.Compose([transforms.ToTensor(), normalize]),
         data_path=cfg.DATASET.PATH,
         split=cfg.dataset_split,
     )
@@ -98,21 +97,24 @@ def main():
         pin_memory=False,
         collate_fn=SegmDataset2D.collate_fn,
     )
-    print('Load data finished')
-    
-    epoch = 0 # special for test
+    print("Load data finished")
+
+    epoch = 0  # special for test
     da_segment_results, total_loss = validate(
-        epoch, cfg, valid_loader, model, criterion,
-        final_output_dir, device=device,
+        epoch, cfg, valid_loader, model, criterion, final_output_dir, device=device
     )
-    msg =   'Test:    Loss({loss:.3f})\n' \
-            'Driving area Segment: Acc({da_seg_acc:.3f})    IOU ({da_seg_iou:.3f})    mIOU({da_seg_miou:.3f})\n'.format(
-                          loss=total_loss, da_seg_acc=da_segment_results[0], 
-                          da_seg_iou=da_segment_results[1], da_seg_miou=da_segment_results[2],)
+    msg = (
+        "Test:    Loss({loss:.3f})\n"
+        "Driving area Segment: Acc({da_seg_acc:.3f})    IOU ({da_seg_iou:.3f})    mIOU({da_seg_miou:.3f})\n".format(
+            loss=total_loss,
+            da_seg_acc=da_segment_results[0],
+            da_seg_iou=da_segment_results[1],
+            da_seg_miou=da_segment_results[2],
+        )
+    )
     logger.info(msg)
     print("Test finish")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-    

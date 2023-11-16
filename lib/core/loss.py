@@ -1,74 +1,82 @@
-import torch.nn as nn
+from typing import Any, List
+
 import torch
+import torch.nn as nn
+from yacs.config import CfgNode
+
 
 class MaskedLoss(nn.Module):
     """
-    Collect all the loss we need
+    A loss module that applies a mask to the loss calculation, allowing for selective
+    evaluation of the loss function over specified elements.
     """
-    def __init__(self, loss, cfg, lambda_val=1.0):
+
+    def __init__(self, loss: nn.Module, cfg: CfgNode, lambda_val: float = 1.0):
         """
-        Inputs:
-            losses: (list)[nn.Module, nn.Module, ...]
-            cfg: config
-            lambdas: (list) + IoU loss, weight for each loss
+        Initializes the MaskedLoss module.
+
+        Args:
+            loss: The loss function to be masked.
+            cfg: Configuration object with various settings.
+            lambda_val: A weighting factor for the loss (default is 1.0).
         """
         super().__init__()
-        
         self.loss = loss
         self.lambda_val = lambda_val
         self.cfg = cfg
 
-    def forward(self, head_fields, head_targets, shapes):
+    def forward(self, head_fields: torch.Tensor, head_targets: List[torch.Tensor], shapes: Any) -> torch.Tensor:
         """
-        Inputs:
-            head_fields: (list) output from each task head
-            head_targets: (list) ground-truth for each task head
+        Forward pass for the loss calculation.
+
+        Args:
+            head_fields: A tensor containing the predictions from the model.
+            head_targets: A list of tensors containing the ground-truth targets.
+            shapes: The original shapes of the input images for scaling the loss if needed.
 
         Returns:
-            loss: masked loss
-
+            torch.Tensor: The calculated loss.
         """
         loss = self._forward_impl(head_fields, head_targets, shapes)
-
         return loss
 
-    def _forward_impl(self, predictions, targets, shapes):
+    def _forward_impl(self, predictions: torch.Tensor, targets: List[torch.Tensor], shapes: Any) -> torch.Tensor:
         """
+        Implementation of the masked loss calculation.
+
         Args:
-            predictions: predicts of drive_area_seg
-            targets: gts segment_targets
+            predictions: The predictions from the segmentation head of the model.
+            targets: The ground-truth segmentation targets.
+            shapes: The original shapes of the input images for scaling the loss if needed.
 
         Returns:
-            loss: masked loss value
+            torch.Tensor: The masked loss value.
         """
-        cfg = self.cfg
         BCEseg = self.loss
-
-        # Calculate Losses
         drive_area_seg_predicts = predictions.view(-1)
         drive_area_seg_targets = targets[1].view(-1)
+
         if self.cfg.LOSS.MASKED:
-            mask = targets[2].view(-1).clone() # mask of points
+            mask = targets[2].view(-1).clone()  # mask of points
             bool_mask = torch.gt(mask, 0)
             drive_area_seg_predicts = drive_area_seg_predicts[bool_mask]
             drive_area_seg_targets = drive_area_seg_targets[bool_mask]
-        
+
         lseg_da = BCEseg(drive_area_seg_predicts, drive_area_seg_targets)
-        lseg_da *= cfg.LOSS.DA_SEG_GAIN * self.lambda_val
+        lseg_da *= self.cfg.LOSS.DA_SEG_GAIN * self.lambda_val
         return lseg_da
 
 
-def get_loss(cfg, device):
+def get_loss(cfg: CfgNode, device: torch.device) -> MaskedLoss:
     """
-    Get loss
+    Constructs and returns the MaskedLoss module.
 
-    Inputs:
-        cfg: config
-        device: cpu or gpu device
+    Args:
+        cfg: Configuration object with various settings, including the loss configuration.
+        device: The device to which the loss module should be assigned.
 
     Returns:
-        loss: (MaskedLoss)
-
+        MaskedLoss: The constructed loss module with the specified configuration.
     """
     # segmentation loss criteria
     BCEseg = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([cfg.LOSS.SEG_POS_WEIGHT])).to(device)

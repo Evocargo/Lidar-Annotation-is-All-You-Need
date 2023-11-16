@@ -1,11 +1,21 @@
-import numpy as np
-import cv2
-import random
 import math
+import random
+from typing import Tuple
+
+import cv2
+import numpy as np
 
 
-def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
-    """change color hue, saturation, value"""
+def augment_hsv(img: np.ndarray, hgain: float = 0.5, sgain: float = 0.5, vgain: float = 0.5) -> None:
+    """
+    Apply Hue, Saturation, and Value (HSV) color space augmentation.
+
+    Args:
+        img: Image (numpy array) to be augmented.
+        hgain: Hue gain for the augmentation.
+        sgain: Saturation gain for the augmentation.
+        vgain: Value gain for the augmentation.
+    """
     r = np.random.uniform(-1, 1, 3) * [hgain, sgain, vgain] + 1  # random gains
     hue, sat, val = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
     dtype = img.dtype  # uint8
@@ -18,8 +28,33 @@ def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
     img_hsv = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val))).astype(dtype)
     cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR, dst=img)  # no return needed
 
-def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0, border=(0, 0)):
-    """combination of img transform"""
+
+def random_perspective(
+    combination: Tuple[np.ndarray, np.ndarray, np.ndarray],
+    targets: np.ndarray = (),
+    degrees: float = 10,
+    translate: float = 0.1,
+    scale: float = 0.1,
+    shear: float = 10,
+    perspective: float = 0.0,
+    border: Tuple[int, int] = (0, 0),
+) -> Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]:
+    """
+    Perform a random perspective transformation on the image and its corresponding targets.
+
+    Args:
+        combination: A tuple containing the image, grayscale image, and line image.
+        targets: Ground truth target values.
+        degrees: Range of degrees for random rotations.
+        translate: Range of translation.
+        scale: Scale range for zooming.
+        shear: Shear angle range.
+        perspective: Perspective range.
+        border: Tuple of pixel values to use for border.
+
+    Returns:
+        Tuple of the transformed combination (image, grayscale, line) and updated targets.
+    """
     img, gray, line = combination
     height = img.shape[0] + border[0] * 2  # shape(h,w,c)
     width = img.shape[1] + border[1] * 2
@@ -37,7 +72,7 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
     # Rotation and Scale
     R = np.eye(3)
     a = random.uniform(-degrees, degrees)
-    s = random.uniform(1 - (scale * 0.5), 1 + scale) # CHANGED this to get more zoomed images TO FIX
+    s = random.uniform(1 - (scale * 0.5), 1 + scale)  # CHANGED this to get more zoomed images TO FIX
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
 
     # Shear
@@ -60,7 +95,9 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
         else:  # affine
             img = cv2.warpAffine(img, M[:2], dsize=(width, height), borderValue=(114, 114, 114))
             # interpolation flag here to more precise transform for points on image
-            gray = cv2.warpAffine(gray, M[:2], dsize=(width, height), borderValue=0, flags=cv2.INTER_NEAREST) # or INTER_LANCZOS4
+            gray = cv2.warpAffine(
+                gray, M[:2], dsize=(width, height), borderValue=0, flags=cv2.INTER_NEAREST
+            )  # or INTER_LANCZOS4
             line = cv2.warpAffine(line, M[:2], dsize=(width, height), borderValue=0)
 
     # Transform label coordinates
@@ -92,8 +129,32 @@ def random_perspective(combination, targets=(), degrees=10, translate=.1, scale=
     combination = (img, gray, line)
     return combination, targets
 
-def letterbox(combination, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
-    """Resize the input image and automatically padding to suitable shape :https://zhuanlan.zhihu.com/p/172121380"""
+
+def letterbox(
+    combination: Tuple[np.ndarray, np.ndarray, np.ndarray],
+    new_shape: Tuple[int, int] = (640, 640),
+    color: Tuple[int, int, int] = (114, 114, 114),
+    auto: bool = True,
+    scale_fill: bool = False,
+    scaleup: bool = True,
+) -> Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], Tuple[float, float], Tuple[int, int]]:
+    """
+    Resize image in a way that keeps the aspect ratio and adds padding.
+    https://zhuanlan.zhihu.com/p/172121380
+
+    Args:
+        combination: A tuple containing the image, grayscale image, and line image.
+        new_shape: New image shape.
+        color: Border color.
+        auto: Adjusts to the minimum rectangle if True.
+        scale_fill: Stretches the image and fills the box if True.
+        scaleup: Allows the image to scale up if True.
+
+    Returns:
+        Tuple of the transformed combination (image, grayscale, line), the resize ratio,
+        and padding dimensions.
+    """
+
     img, gray, line = combination
     shape = img.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
@@ -110,7 +171,7 @@ def letterbox(combination, new_shape=(640, 640), color=(114, 114, 114), auto=Tru
     dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
     if auto:  # minimum rectangle
         dw, dh = np.mod(dw, 32), np.mod(dh, 32)  # wh padding
-    elif scaleFill:  # stretch
+    elif scale_fill:  # stretch
         dw, dh = 0.0, 0.0
         new_unpad = (new_shape[1], new_shape[0])
         ratio = new_shape[1] / shape[1], new_shape[0] / shape[0]  # width, height ratios
@@ -133,8 +194,32 @@ def letterbox(combination, new_shape=(640, 640), color=(114, 114, 114), auto=Tru
     combination = (img, gray, line)
     return combination, ratio, (dw, dh)
 
-def letterbox_for_img(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
-    # Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232
+
+def letterbox_for_img(
+    img: np.ndarray,
+    new_shape: Tuple[int, int] = (640, 640),
+    color: Tuple[int, int, int] = (114, 114, 114),
+    auto: bool = True,
+    scale_fill: bool = False,
+    scaleup: bool = True,
+) -> Tuple[np.ndarray, Tuple[float, float], Tuple[int, int]]:
+    """
+    Resize a single image in a way that keeps the aspect ratio and adds padding.
+
+    Args:
+        img: Image to be resized and padded.
+        new_shape: New image shape.
+        color: Border color.
+        auto: Adjusts to the minimum rectangle if True.
+        scale_fill: Stretches the image and fills the box if True.
+        scaleup: Allows the image to scale up if True.
+
+    Returns:
+        Tuple of the transformed image, the resize ratio, and padding dimensions.
+    """
+    # Resize image to a 32-pixel-multiple rectangle
+    # https://github.com/ultralytics/yolov3/issues/232
+
     shape = img.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
         new_shape = (new_shape, new_shape)
@@ -148,13 +233,12 @@ def letterbox_for_img(img, new_shape=(640, 640), color=(114, 114, 114), auto=Tru
     ratio = r, r  # width, height ratios
     new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
 
-
     dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
 
     if auto:  # minimum rectangle
         dw, dh = np.mod(dw, 32), np.mod(dh, 32)  # wh padding
 
-    elif scaleFill:  # stretch
+    elif scale_fill:  # stretch
         dw, dh = 0.0, 0.0
         new_unpad = (new_shape[1], new_shape[0])
         ratio = new_shape[1] / shape[1], new_shape[0] / shape[0]  # width, height ratios
@@ -169,8 +253,26 @@ def letterbox_for_img(img, new_shape=(640, 640), color=(114, 114, 114), auto=Tru
     img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
     return img, ratio, (dw, dh)
 
-def _box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1):  # box1(4,n), box2(4,n)
-    # Compute candidate boxes: box1 before augment, box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
+
+def _box_candidates(
+    box1: np.ndarray, box2: np.ndarray, wh_thr: int = 2, ar_thr: int = 20, area_thr: float = 0.1
+) -> np.ndarray:
+    """
+    Compute candidate boxes that meet the specified thresholds.
+
+    Args:
+        box1: Original boxes before augmentation.
+        box2: Boxes after augmentation.
+        wh_thr: Width and height threshold.
+        ar_thr: Aspect ratio threshold.
+        area_thr: Area ratio threshold.
+
+    Returns:
+        Numpy array of candidate boxes that meet the specified thresholds.
+    """
+    # box1(4,n), box2(4,n)
+    # Compute candidate boxes: box1 before augment,
+    # box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
     w1, h1 = box1[2] - box1[0], box1[3] - box1[1]
     w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
     ar = np.maximum(w2 / (h2 + 1e-16), h2 / (w2 + 1e-16))  # aspect ratio
