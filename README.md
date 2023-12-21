@@ -12,21 +12,23 @@ segmentation on images by using lidar points as ground truth. The flexibility of
 the approach allows mixing lidar data with 2D ground truth, and by doing that,
 increasing the quality of predictions.
 
-[Lidar Annotation Is All You Need](https://arxiv.org/abs/2311.04777) <br />
+**[Lidar Annotation Is All You Need](https://ieeexplore.ieee.org/document/10335658)** <br />
 Dinar Sharafutdinov, Stanislav Kuskov, Saian Protasov, Alexey Voropaev
 
-You can find a detailed description of our approach in the paper. If you find
-our work useful for your research, please consider giving it a star ⭐ and
-citing the paper:
+You can find a detailed description of our approach in the paper. The work was published in 
+the IEEE Access journal. If you find our work useful for your research, please consider 
+giving it a star ⭐ and citing the paper:
 
 ```
-@misc{sharafutdinov2023lidar,
-      title={Lidar Annotation Is All You Need},
-      author={Dinar Sharafutdinov and Stanislav Kuskov and Saian Protasov and Alexey Voropaev},
-      year={2023},
-      eprint={2311.04777},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
+@article{sharafutdinov2023lidar,
+  author={Sharafutdinov, Dinar and Kuskov, Stanislav and Protasov, Saian and Voropaev, Alexey},
+  journal={IEEE Access}, 
+  title={Lidar Annotation Is All You Need}, 
+  year={2023},
+  volume={11},
+  number={},
+  pages={135820-135830},
+  doi={10.1109/ACCESS.2023.3337995}
 }
 ```
 
